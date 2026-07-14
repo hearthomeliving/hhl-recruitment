@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Live Chaser &mdash; Candidates Being Chased</title>
+<style>
+  :root{--bg:#0e1726;--panel:#15233c;--ink:#eaf0fb;--muted:#9fb1d0;--line:rgba(255,255,255,.10);--accent:#4f8cff;--good:#34d399;--warn:#fbbf24;--bad:#f87171}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,#1b2c49 0%,#0e1726 55%);color:var(--ink);min-height:100vh}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 48px}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  h1{font-size:22px;margin:0 0 3px}
+  .sub{color:var(--muted);font-size:13px;margin:0}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:default}
+  .stamp{color:var(--muted);font-size:11px;margin-top:5px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:680px}
+  th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left}
+  thead th{color:var(--muted);font-size:12px;font-weight:600;border-bottom:2px solid var(--line)}
+  td.c,th.c{text-align:center}
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;margin:1px 3px 1px 0}
+  .tag.app{background:rgba(79,140,255,.16);color:#9cc0ff}
+  .tag.ref{background:rgba(52,211,153,.16);color:var(--good)}
+  .tag.other{background:rgba(159,177,208,.16);color:var(--muted)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:800}
+  .pill.lo{background:rgba(52,211,153,.15);color:var(--good)}
+  .pill.mid{background:rgba(251,191,36,.15);color:var(--warn)}
+  .pill.hi{background:rgba(248,113,113,.15);color:var(--bad)}
+  .cancel{background:transparent;border:1px solid var(--bad);color:var(--bad);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer}
+  .cancel:hover{background:var(--bad);color:#fff}
+  .cancel:disabled{opacity:.5;cursor:default}
+  .loading{padding:36px;text-align:center;color:var(--muted)}
+  .empty{padding:40px;text-align:center;color:var(--muted)}
+  .err{color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Live Chaser</h1>
+      <p class="sub">Heart &amp; Home Living &middot; candidates currently being chased for an application form or reference</p>
+      <div class="stamp" id="stamp"></div>
+    </div>
+    <button class="btn" id="refresh">&#8635; Refresh live</button>
+  </div>
+  <div class="card"><div id="box"><div class="loading">Loading saved snapshot&hellip;</div></div></div>
+</div>
+
+<script>
+  const DATA_URL = "chaser-data.json";
+  const REBUILD_URL = "https://ruthbloch.app.n8n.cloud/webhook/rebuild-chaser";
+  const STOP_URL = "https://ruthbloch.app.n8n.cloud/webhook/stop-candidate";
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function expiryText(ms){
+    if(!ms) return '&mdash;';
+    var d = new Date(ms), now = Date.now();
+    var diff = ms - now;
+    var when = d.toLocaleString();
+    if(diff <= 0) return when + ' <span style="color:var(--bad)">(expired)</span>';
+    var hrs = Math.round(diff/3600000);
+    return when + ' <span style="color:var(--muted)">(' + (hrs<48 ? hrs+'h' : Math.round(hrs/24)+'d') + ')</span>';
+  }
+
+  function typeTags(types){
+    return (types||[]).map(function(t){
+      var cls = t==='Application' ? 'app' : (t==='Reference' ? 'ref' : 'other');
+      return '<span class="tag '+cls+'">'+esc(t)+'</span>';
+    }).join('');
+  }
+
+  function chasePill(n){
+    var cls = n>=3 ? 'hi' : (n>=1 ? 'mid' : 'lo');
+    return '<span class="pill '+cls+'">'+n+' / 3</span>';
+  }
+
+  function render(snap){
+    snap = snap || {};
+    var list = snap.candidates || [];
+    if(!list.length){
+      document.getElementById('box').innerHTML = '<div class="empty">Nobody is currently being chased. When an application form or reference link is sent and left unsubmitted, the candidate appears here.</div>';
+      return;
+    }
+    var head = '<tr><th>Candidate</th><th>Role</th><th>Chasing for</th><th class="c">Chases</th><th>Current link expires</th><th class="c">Action</th></tr>';
+    var body = list.map(function(c){
+      return '<tr data-tid="'+esc(c.tid)+'">'+
+        '<td><strong>'+esc(c.cand||'(no name)')+'</strong></td>'+
+        '<td>'+esc(c.role||'')+'</td>'+
+        '<td>'+typeTags(c.types)+'</td>'+
+        '<td class="c">'+chasePill(Number(c.chases)||0)+'</td>'+
+        '<td>'+expiryText(c.nextExpiry)+'</td>'+
+        '<td class="c"><button class="cancel" data-tid="'+esc(c.tid)+'" data-name="'+esc(c.cand||'')+'">Cancel chase</button></td>'+
+      '</tr>';
+    }).join('');
+    document.getElementById('box').innerHTML = '<table><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+    Array.prototype.forEach.call(document.querySelectorAll('.cancel'), function(b){
+      b.addEventListener('click', function(){ cancelChase(b.getAttribute('data-tid'), b.getAttribute('data-name'), b); });
+    });
+  }
+
+  function stamp(snap, live){
+    var when = snap && snap.generated ? new Date(snap.generated).toLocaleString() : 'unknown';
+    document.getElementById('stamp').textContent = (live ? 'Live pull · ' : 'Saved snapshot · ') + when + ' · press Refresh for the latest';
+  }
+
+  function loadSnapshot(){
+    fetch(DATA_URL + '?t=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(snap){ render(snap); stamp(snap, false); })
+      .catch(function(){ document.getElementById('box').innerHTML = '<div class="empty">No saved snapshot yet. Press Refresh to build one.</div>'; });
+  }
+
+  function doRefresh(){
+    var btn = document.getElementById('refresh');
+    btn.disabled = true; btn.textContent = 'Refreshing…';
+    fetch(REBUILD_URL + '?t=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(snap){ render(snap); stamp(snap, true); })
+      .catch(function(){ document.getElementById('box').innerHTML = '<div class="loading err">Could not refresh live. Showing the saved snapshot.</div>'; loadSnapshot(); })
+      .then(function(){ btn.disabled = false; btn.textContent = '↻ Refresh live'; });
+  }
+
+  function cancelChase(tid, name, btn){
+    if(!tid) return;
+    if(!window.confirm('Stop chasing ' + (name || 'this candidate') + '?\n\nThis switches off all their application and reference links, marks them Candidate Withdrew, and moves the card to Rejected Candidates. No further links can be sent.')) return;
+    btn.disabled = true; btn.textContent = 'Stopping…';
+    fetch(STOP_URL + '?tid=' + encodeURIComponent(tid), { method: 'POST' })
+      .then(function(r){ return r.json(); })
+      .then(function(){ doRefresh(); })
+      .catch(function(){ btn.disabled = false; btn.textContent = 'Cancel chase'; alert('Could not stop the chase. Please try again.'); });
+  }
+
+  document.getElementById('refresh').addEventListener('click', doRefresh);
+  loadSnapshot();
+</script>
+</body>
+</html>
