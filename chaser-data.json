@@ -1,5 +1,16 @@
 {
-  "candidates": [],
-  "count": 0,
-  "generated": "2026-07-14T00:00:00.000Z"
+  "candidates": [
+    {
+      "tid": "86cap2f0x",
+      "cand": "TEST V2 Candidate",
+      "role": "Support Worker",
+      "types": [
+        "Application"
+      ],
+      "chases": 1,
+      "nextExpiry": 1784500000000
+    }
+  ],
+  "count": 1,
+  "generated": "2026-07-14T15:57:26.625Z"
 }
