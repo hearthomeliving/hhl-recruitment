@@ -54,7 +54,7 @@ btn.addEventListener("click",function(){
 if(!input.files.length||!roleSel.value){return;}
 var fd=new FormData();fd.append("cv",input.files[0]);fd.append("role",roleSel.value);
 btn.disabled=true;btn.textContent="Reading CV and creating candidate...";
-fetch(SUBMIT_URL,{method:"POST",body:fd}).then(function(r){if(!r.ok)throw new Error("bad");$id("formArea").style.display="none";$id("done").style.display="block";$id("doneMsg").textContent="Done. A candidate card has been created from the CV – open Candidates Test V2 to review and complete it.";}).catch(function(){btn.disabled=false;btn.textContent="Create candidate from CV";var b=$id("errbox");b.textContent="Something went wrong. Please try again.";b.style.display="block";});
+fetch(SUBMIT_URL,{method:"POST",body:fd}).then(function(r){if(!r.ok)throw new Error("bad");$id("formArea").style.display="none";$id("done").style.display="block";$id("doneMsg").textContent="Done. A candidate card has been created from the CV – open Candidate V3 to review and complete it.";}).catch(function(){btn.disabled=false;btn.textContent="Create candidate from CV";var b=$id("errbox");b.textContent="Something went wrong. Please try again.";b.style.display="block";});
 });
 $id("again").addEventListener("click",function(){location.reload();});
 </script></body></html>
