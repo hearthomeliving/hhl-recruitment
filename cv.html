@@ -15,6 +15,9 @@ button:disabled{opacity:.5}
 #errbox{background:#fdecec;border:1px solid #f5b5b5;border-radius:8px;padding:10px 14px;margin-top:14px;display:none}
 #done{text-align:center;padding:30px 10px;display:none}
 .note{background:var(--pl);border-left:4px solid var(--p);padding:10px 12px;border-radius:6px;font-size:13px;margin:14px 0}
+.homes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.homes label{display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;background:var(--pl);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;margin:0;cursor:pointer}
+.homes input{margin:0;width:auto}
 </style></head>
 <body><div class="wrap">
 <div id="formArea">
@@ -32,6 +35,20 @@ button:disabled{opacity:.5}
 <option>CEO</option>
 <option>Positive Behaviour Specialist</option>
 </select>
+<label>Home(s) this candidate is for <span style="font-weight:400;color:#6a6383">(optional, choose up to 2)</span></label>
+<div class="homes" id="homes">
+<label><input type="checkbox" value="Orion">Orion</label>
+<label><input type="checkbox" value="Aurora">Aurora</label>
+<label><input type="checkbox" value="Lyra">Lyra</label>
+<label><input type="checkbox" value="Cygnus">Cygnus</label>
+<label><input type="checkbox" value="Leo">Leo</label>
+<label><input type="checkbox" value="Lynx">Lynx</label>
+<label><input type="checkbox" value="Head Office">Head Office</label>
+<label><input type="checkbox" value="Leicestershire Region">Leicestershire Region</label>
+<label><input type="checkbox" value="Northampton Region">Northampton Region</label>
+<label><input type="checkbox" value="Phoenix House">Phoenix House</label>
+<label><input type="checkbox" value="Vela House">Vela House</label>
+</div>
 <div class="drop" id="drop">Click to choose a CV, or drag it here<div class="file" id="fileName"></div></div>
 <input type="file" id="cv" accept=".pdf" style="display:none">
 <div id="errbox"></div>
@@ -49,10 +66,13 @@ drop.addEventListener("click",function(){input.click();});
 drop.addEventListener("drop",function(ev){if(ev.dataTransfer.files.length){input.files=ev.dataTransfer.files;show();}});
 input.addEventListener("change",show);
 roleSel.addEventListener("change",show);
+var homeBoxes=Array.prototype.slice.call(document.querySelectorAll("#homes input[type=checkbox]"));
+homeBoxes.forEach(function(cb){cb.addEventListener("change",function(){if(document.querySelectorAll("#homes input:checked").length>2){cb.checked=false;}});});
+function selectedHomes(){return homeBoxes.filter(function(c){return c.checked;}).map(function(c){return c.value;});}
 function show(){if(input.files.length){$id("fileName").textContent=input.files[0].name;}btn.disabled=!(input.files.length&&roleSel.value);}
 btn.addEventListener("click",function(){
 if(!input.files.length||!roleSel.value){return;}
-var fd=new FormData();fd.append("cv",input.files[0]);fd.append("role",roleSel.value);
+var fd=new FormData();fd.append("cv",input.files[0]);fd.append("role",roleSel.value);fd.append("homes",JSON.stringify(selectedHomes()));
 btn.disabled=true;btn.textContent="Reading CV and creating candidate...";
 fetch(SUBMIT_URL,{method:"POST",body:fd}).then(function(r){if(!r.ok)throw new Error("bad");$id("formArea").style.display="none";$id("done").style.display="block";$id("doneMsg").textContent="Done. A candidate card has been created from the CV – open Candidate V3 to review and complete it.";}).catch(function(){btn.disabled=false;btn.textContent="Create candidate from CV";var b=$id("errbox");b.textContent="Something went wrong. Please try again.";b.style.display="block";});
 });
