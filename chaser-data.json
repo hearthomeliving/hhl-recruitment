@@ -1,17 +1,5 @@
 {
-  "candidates": [
-    {
-      "tid": "86car8zyg",
-      "cand": "V3 Test - Send Flows",
-      "role": "Support Worker",
-      "types": [
-        "Application",
-        "Offerbuilder"
-      ],
-      "chases": 0,
-      "nextExpiry": 1784382546216
-    }
-  ],
-  "count": 1,
-  "generated": "2026-07-17T15:13:10.288Z"
+  "candidates": [],
+  "count": 0,
+  "generated": "2026-07-17T15:13:25.729Z"
 }
