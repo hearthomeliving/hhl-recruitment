@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>Screening Questionnaire - Heart &amp; Home Living</title>
+<style>
+:root{--p:#6b4fbb;--pl:#f3effc;--bd:#ddd6f0;--tx:#2b2440;--mut:#6a6383;--ok:#1c7a4a;--warn:#9a6408;--bad:#a33}
+*{box-sizing:border-box}
+body{font-family:Segoe UI,Arial,sans-serif;background:var(--pl);color:var(--tx);margin:0;padding:16px}
+.wrap{max-width:820px;margin:14px auto;background:#fff;border-radius:14px;padding:26px;box-shadow:0 4px 18px rgba(80,60,140,.12)}
+h1{color:var(--p);margin:0 0 2px;font-size:22px}
+.sub{color:var(--mut);font-size:14px;margin:0 0 18px}
+.meta{display:flex;flex-wrap:wrap;gap:14px;background:var(--pl);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:8px}
+.meta .f{flex:1;min-width:210px}
+.meta label{display:block;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:4px}
+.meta .val{font-size:15px;font-weight:600;padding:8px 0}
+input,textarea{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:9px;font-size:14px;font-family:inherit;background:#fff;color:var(--tx)}
+textarea{resize:vertical;min-height:44px}
+.sec{margin-top:22px}
+.sec h2{font-size:16px;color:var(--p);margin:0 0 2px;display:flex;justify-content:space-between;align-items:baseline}
+.sec h2 .w{font-size:11px;font-weight:700;color:#fff;background:var(--p);border-radius:20px;padding:2px 10px}
+.sec .line{height:2px;background:var(--bd);margin:6px 0 14px}
+.q{padding:12px 0;border-bottom:1px solid #eee}
+.q .qt{font-size:14px;font-weight:600;margin-bottom:8px}
+.q .qt .num{color:var(--p);margin-right:6px}
+.scorerow{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.scorerow .lab{font-size:12px;color:var(--mut);font-weight:600}
+.sbtns{display:flex;gap:6px}
+.sbtn{width:38px;height:34px;border:1px solid var(--bd);background:#fff;border-radius:8px;font-weight:700;color:var(--mut);cursor:pointer;font-size:15px}
+.sbtn.on{background:var(--p);color:#fff;border-color:var(--p)}
+.na{font-size:12px;color:var(--mut)}
+.totalbar{position:sticky;bottom:0;margin-top:22px;background:#fff;border:2px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 -4px 14px rgba(80,60,140,.08)}
+.totalbar .t{font-size:15px;font-weight:700}
+.pill{display:inline-block;border-radius:20px;padding:4px 14px;font-size:13px;font-weight:700;margin-left:10px}
+.pill.rej{background:#fdecec;color:var(--bad)}
+.pill.con{background:#fdf0dc;color:var(--warn)}
+.pill.pro{background:#e4f5ec;color:var(--ok)}
+.pill.non{background:var(--pl);color:var(--mut)}
+button.submit{background:var(--p);color:#fff;border:0;border-radius:10px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer}
+button.submit:disabled{opacity:.5;cursor:default}
+.msg{padding:26px;text-align:center;font-size:15px;color:var(--mut)}
+.msg h2{color:var(--p)}
+.err{background:#fdecec;border:1px solid #f5b5b5;border-radius:8px;padding:12px;color:var(--bad);font-size:13px;margin-top:10px}
+.req{color:var(--bad)}
+.notes{margin-top:22px}
+.notes label{font-weight:600;font-size:14px;display:block;margin-bottom:6px}
+</style></head>
+<body><div class="wrap" id="root"><div class="msg">Loading…</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var API="https://ruthbloch.app.n8n.cloud/webhook";
+var TOKEN=new URLSearchParams(location.search).get("token")||"";
+var SECTIONS=[
+ {title:"Right to Work & Background Checks",weight:"High",qs:[
+  {n:1,q:"Are you eligible to work in the UK?",scored:true},
+  {n:2,q:"Do you require visa sponsorship to work in the UK?",scored:true},
+  {n:3,q:"If yes, are you aware of how the new immigration laws and NHS surcharge fees apply to your situation?",scored:true},
+  {n:4,q:"Do you have a current DBS registered to the Update Service?",scored:true},
+  {n:5,q:"Do you have any cautions, convictions, or pending investigations we should be aware of?",scored:true},
+  {n:6,q:"Have you been involved in any previous workplace disciplinary actions that we need to be informed about?",scored:true}
+ ]},
+ {title:"Driving & Travel",weight:"Medium / High",qs:[
+  {n:7,q:"Do you hold a full UK driving licence?",scored:true},
+  {n:8,q:"Is your licence manual or automatic?",scored:false},
+  {n:9,q:"Do you have any points or endorsements on your licence?",scored:true},
+  {n:10,q:"Are you willing and able to travel to other services within Northamptonshire if required?",scored:true}
+ ]},
+ {title:"Availability & Working Hours",weight:"Medium",qs:[
+  {n:11,q:"Are you able to work flexible shifts, including weekends and sleep-in shifts?",scored:true},
+  {n:12,q:"What is your current notice period?",scored:false}
+ ]},
+ {title:"Role Suitability Confirmation",weight:"High",qs:[
+  {n:13,q:"Have you read the Role Suitability Checklist, and can you confirm that you are able to meet all the physical and practical requirements listed (e.g., physical interventions, walking long distances, carrying equipment, floor-level play, flexible shifts)?",scored:true}
+ ]},
+ {title:"About You",weight:"High",qs:[
+  {n:14,q:"This role requires responding to children who have experienced significant trauma and may exhibit challenging or unpredictable behaviour as a result. What steps would you take if you felt overwhelmed or emotionally affected by the work?",scored:true},
+  {n:15,q:"What are you currently doing (employment, education, etc.)?",scored:false},
+  {n:16,q:"What motivated you to apply for a role with Heart & Home Living?",scored:true},
+  {n:17,q:"What relevant experience do you have that makes you suitable for this role?",scored:true},
+  {n:18,q:"What qualifications do you hold that are relevant to this position?",scored:true},
+  {n:19,q:"What would your availability be for an interview over Teams? It will take up to an hour.",scored:false},
+  {n:20,q:"Can I please confirm the best email address to send the invite to?",scored:false}
+ ]}
+];
+var CAND="",DATESTR="",scores={},longAns={};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function todayUK(){var d=new Date();return d.toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"});}
+function outcome(total){if(total<=12)return{t:"Reject",c:"rej"};if(total<=20)return{t:"Consider",c:"con"};return{t:"Proceed",c:"pro"};}
+function recalc(){
+  var total=0,any=false;
+  SECTIONS.forEach(function(s){s.qs.forEach(function(q){if(q.scored&&scores[q.n]!=null){total+=scores[q.n];any=true;}});});
+  document.getElementById("totalval").textContent=total;
+  var pillEl=document.getElementById("outpill");
+  if(!any){pillEl.className="pill non";pillEl.textContent="No scores yet";}
+  else{var o=outcome(total);pillEl.className="pill "+o.c;pillEl.textContent=o.t;}
+}
+function boot(){
+  if(!TOKEN){render("<div class='msg'><h2>Link not valid</h2><p>This screening link is missing its code. Please use the link from the email.</p></div>");return;}
+  fetch(API+"/screening-form-data?token="+encodeURIComponent(TOKEN),{cache:"no-store"})
+   .then(function(r){return r.json();})
+   .then(function(d){
+      if(!d||d.ok===false||!d.cand){render("<div class='msg'><h2>Link not valid</h2><p>We could not find this screening. Please check the link.</p></div>");return;}
+      if(d.submitted){render("<div class='msg'><h2>Already completed</h2><p>A screening questionnaire has already been submitted for <b>"+esc(d.cand)+"</b>. Each candidate can only be screened once.</p></div>");return;}
+      CAND=d.cand;DATESTR=todayUK();form();
+   })
+   .catch(function(){render("<div class='msg'><h2>Could not load</h2><p>Please refresh to try again.</p><div class='err'>Network error contacting the server.</div></div>");});
+}
+function render(h){document.getElementById("root").innerHTML=h;}
+function form(){
+  var h="<h1>Screening Questionnaire</h1><p class='sub'>Heart &amp; Home Living — recruiter screening call</p>";
+  h+="<div class='meta'>"+
+     "<div class='f'><label>Candidate Name</label><div class='val'>"+esc(CAND)+"</div></div>"+
+     "<div class='f'><label>Date</label><div class='val'>"+esc(DATESTR)+"</div></div>"+
+     "<div class='f'><label>Completed by <span class='req'>*</span></label><input id='completedby' placeholder='Your name' autocomplete='off'></div>"+
+     "</div>";
+  h+="<p class='sub' style='margin-top:12px'>Scoring: <b>0</b> = does not meet / significant concern &nbsp;·&nbsp; <b>1</b> = partially meets / needs clarification &nbsp;·&nbsp; <b>2</b> = fully meets or exceeds.</p>";
+  SECTIONS.forEach(function(s,si){
+    h+="<div class='sec'><h2>"+esc(s.title)+"<span class='w'>"+esc(s.weight)+"</span></h2><div class='line'></div>";
+    s.qs.forEach(function(q){
+      h+="<div class='q'><div class='qt'><span class='num'>"+q.n+".</span>"+esc(q.q)+"</div>";
+      h+="<textarea id='r"+q.n+"' rows='2' placeholder='Response'></textarea>";
+      if(q.scored){
+        h+="<div class='scorerow'><span class='lab'>Score</span><div class='sbtns' data-q='"+q.n+"'>"+
+           "<button type='button' class='sbtn' data-v='0'>0</button>"+
+           "<button type='button' class='sbtn' data-v='1'>1</button>"+
+           "<button type='button' class='sbtn' data-v='2'>2</button></div></div>";
+      } else {
+        h+="<div class='scorerow'><span class='na'>Information only — not scored</span></div>";
+      }
+      h+="</div>";
+    });
+    h+="</div>";
+  });
+  h+="<div class='notes'><label>Manager Notes</label><textarea id='notes' rows='4' placeholder='Any additional notes'></textarea></div>";
+  h+="<div class='totalbar'><div class='t'>Total Score: <span id='totalval'>0</span><span id='outpill' class='pill non'>No scores yet</span></div>"+
+     "<button class='submit' id='submitbtn'>Submit questionnaire</button></div>";
+  h+="<div id='formerr'></div>";
+  render(h);
+  document.querySelectorAll(".sbtns").forEach(function(row){
+    row.addEventListener("click",function(e){
+      var b=e.target.closest(".sbtn");if(!b)return;
+      var qn=Number(row.getAttribute("data-q")),v=Number(b.getAttribute("data-v"));
+      if(scores[qn]===v){scores[qn]=null;row.querySelectorAll(".sbtn").forEach(function(x){x.classList.remove("on");});}
+      else{scores[qn]=v;row.querySelectorAll(".sbtn").forEach(function(x){x.classList.toggle("on",Number(x.getAttribute("data-v"))===v);});}
+      recalc();
+    });
+  });
+  document.getElementById("submitbtn").addEventListener("click",submit);
+  recalc();
+}
+function collect(){
+  var answers=[];
+  SECTIONS.forEach(function(s){s.qs.forEach(function(q){
+    var r=(document.getElementById("r"+q.n).value||"").trim();
+    answers.push({n:q.n,section:s.title,q:q.q,response:r,scored:q.scored,score:(q.scored?(scores[q.n]!=null?scores[q.n]:null):null)});
+  });});
+  var total=0;answers.forEach(function(a){if(a.scored&&a.score!=null)total+=a.score;});
+  return {token:TOKEN,cand:CAND,date:DATESTR,completedBy:(document.getElementById("completedby").value||"").trim(),notes:(document.getElementById("notes").value||"").trim(),answers:answers,total:total,outcome:outcome(total).t};
+}
+function makePdf(data){
+  var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:"pt",format:"a4"});
+  var M=42,W=515,y=54;
+  function nl(n){y+=(n||14);if(y>790){doc.addPage();y=54;}}
+  function wrap(txt,size,style,color){doc.setFont("helvetica",style||"normal");doc.setFontSize(size||10);if(color)doc.setTextColor(color[0],color[1],color[2]);else doc.setTextColor(43,36,64);var lines=doc.splitTextToSize(txt,W);lines.forEach(function(ln){doc.text(ln,M,y);nl(size?size+4:14);});}
+  doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(107,79,187);doc.text("Screening Questionnaire",M,y);nl(20);
+  wrap("Heart & Home Living — recruiter screening call",9,"normal",[106,99,131]);nl(4);
+  wrap("Candidate: "+data.cand,11,"bold");
+  wrap("Date: "+data.date,10,"normal");
+  wrap("Completed by: "+(data.completedBy||"-"),10,"normal");nl(6);
+  var curSec="";
+  data.answers.forEach(function(a){
+    if(a.section!==curSec){curSec=a.section;nl(6);wrap(curSec,12,"bold",[107,79,187]);}
+    wrap(a.n+". "+a.q,10,"bold");
+    wrap("Response: "+(a.response||"-"),10,"normal");
+    if(a.scored){wrap("Score: "+(a.score!=null?a.score:"-"),10,"normal",[106,99,131]);}
+    nl(4);
+  });
+  nl(8);wrap("Total Score: "+data.total+"   Outcome: "+data.outcome,12,"bold",[107,79,187]);
+  nl(6);wrap("Manager Notes:",11,"bold");wrap(data.notes||"-",10,"normal");
+  return doc.output("blob");
+}
+function submit(){
+  var data=collect();
+  var err=document.getElementById("formerr");err.innerHTML="";
+  if(!data.completedBy){err.innerHTML="<div class='err'>Please enter your name in \"Completed by\" before submitting.</div>";window.scrollTo(0,0);return;}
+  var btn=document.getElementById("submitbtn");btn.disabled=true;btn.textContent="Submitting…";
+  var pdf;try{pdf=makePdf(data);}catch(e){err.innerHTML="<div class='err'>Could not build the PDF: "+esc(e.message)+"</div>";btn.disabled=false;btn.textContent="Submit questionnaire";return;}
+  var fd=new FormData();
+  fd.append("payload",JSON.stringify(data));
+  fd.append("screeningpdf",pdf,"Screening - "+data.cand+".pdf");
+  fetch(API+"/screening-submit",{method:"POST",body:fd})
+   .then(function(r){if(!r.ok)throw new Error("bad");return r.text();})
+   .then(function(){render("<div class='msg'><h2>Thank you</h2><p>The screening questionnaire for <b>"+esc(data.cand)+"</b> has been submitted and saved to the candidate's card as a PDF.</p></div>");})
+   .catch(function(){err.innerHTML="<div class='err'>Submission failed. Please try again.</div>";btn.disabled=false;btn.textContent="Submit questionnaire";});
+}
+boot();
+</script></body></html>
