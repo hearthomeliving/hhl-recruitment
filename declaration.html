@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>Employee Disclosure &amp; Declaration - Heart &amp; Home Living</title>
+<style>
+:root{--p:#6b4fbb;--pl:#f3effc;--bd:#ddd6f0;--tx:#2b2440;--mut:#6a6383;--bad:#a33}
+*{box-sizing:border-box}
+body{font-family:Segoe UI,Arial,sans-serif;background:var(--pl);color:var(--tx);margin:0;padding:16px}
+.wrap{max-width:820px;margin:14px auto;background:#fff;border-radius:14px;padding:26px;box-shadow:0 4px 18px rgba(80,60,140,.12)}
+h1{color:var(--p);margin:0 0 2px;font-size:22px}
+.sub{color:var(--mut);font-size:13.5px;margin:0 0 8px}
+.intro{background:var(--pl);border:1px solid var(--bd);border-radius:10px;padding:14px;font-size:13px;color:var(--tx);margin:10px 0 18px}
+.intro p{margin:0 0 8px}
+.meta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px}
+.meta .f{flex:1;min-width:210px}
+.meta label{display:block;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:4px}
+.meta .val{font-size:15px;font-weight:600;padding:8px 0}
+input,textarea,select{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:9px;font-size:14px;font-family:inherit;background:#fff;color:var(--tx)}
+textarea{resize:vertical;min-height:44px}
+.sec{margin-top:24px}
+.sec h2{font-size:16px;color:var(--p);margin:0 0 2px}
+.sec .line{height:2px;background:var(--bd);margin:6px 0 14px}
+.q{padding:12px 0;border-bottom:1px solid #eee}
+.q .qt{font-size:14px;margin-bottom:8px}
+.q .qt .num{color:var(--p);font-weight:700;margin-right:6px}
+.q .hint{color:var(--mut);font-size:12px;display:block;margin-top:3px}
+.yn{display:flex;gap:8px}
+.yn button{flex:0 0 auto;min-width:64px;padding:8px 14px;border:1px solid var(--bd);background:#fff;border-radius:8px;font-weight:700;color:var(--mut);cursor:pointer;font-size:14px}
+.yn button.on{background:var(--p);color:#fff;border-color:var(--p)}
+.details{margin-top:8px;display:none}
+.details.show{display:block}
+.grid{display:flex;flex-wrap:wrap;gap:14px}
+.grid .f{flex:1;min-width:220px}
+.grid label{display:block;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:4px}
+.decl{background:var(--pl);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-top:8px;font-size:14px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:14px 0}
+.chk input{width:auto;margin-top:3px}
+.bar{position:sticky;bottom:0;margin-top:22px;background:#fff;border:2px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;justify-content:flex-end;box-shadow:0 -4px 14px rgba(80,60,140,.08)}
+button.submit{background:var(--p);color:#fff;border:0;border-radius:10px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer}
+button.submit:disabled{opacity:.5;cursor:default}
+.msg{padding:26px;text-align:center;font-size:15px;color:var(--mut)}
+.msg h2{color:var(--p)}
+.err{background:#fdecec;border:1px solid #f5b5b5;border-radius:8px;padding:12px;color:var(--bad);font-size:13px;margin-top:10px}
+.req{color:var(--bad)}
+</style></head>
+<body><div class="wrap" id="root"><div class="msg">Loading…</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var API="https://ruthbloch.app.n8n.cloud/webhook";
+var TOKEN=new URLSearchParams(location.search).get("token")||"";
+// Safeguarding / criminal disclosure questions (Yes/No + details if Yes)
+var DISCLOSE=[
+ {n:1,q:"Are you currently bound over, or have you been convicted of any offence by a Court or Court-Martial (in the UK or any other country) that remains unspent?",hint:"You do not need to tell us about parking offences."},
+ {n:2,q:"Do you have an unspent police caution, reprimand or final warning?"},
+ {n:3,q:"Have you been charged with any offence (UK or abroad) that remains unspent?",hint:"You must inform us immediately if charged after completing this form. Parking offences excluded."},
+ {n:4,q:"Are you aware of any current police investigations following allegations against you?"},
+ {n:5,q:"Have you been investigated by the Police or any other Investigatory Body resulting in a caution, conviction or dismissal from employment which remains unspent?",hint:"Investigatory bodies include Local Authorities, HMRC, Immigration, DWP, FSA, banks and others; this list is not exhaustive."},
+ {n:6,q:"Have you ever been dismissed by reason of misconduct from any employment, office or position?"},
+ {n:7,q:"Has any disciplinary action ever been taken against you in former employment?"},
+ {n:8,q:"Have you ever been the subject of any proven or unproven investigations or complaints relating to your work with children or vulnerable adults (privately, at work or voluntarily)?"},
+ {n:9,q:"Have you ever been disqualified from the practice of a profession, or required to practise subject to limitations, following fitness-to-practise proceedings?",hint:"Includes a Disqualification Order for working with children, or being refused/cancelled from a register of childminders, day care, fostering or care/children's homes."},
+ {n:10,q:"Are you currently the subject of any investigation or fitness-to-practise proceedings by any licensing or regulatory body?"},
+ {n:11,q:"Are you subject to any other prohibition, limitation or restriction that means we may be unable to consider you for this position?"},
+ {n:12,q:"Are you aware of any police enquiries following allegations against you, past or present, which may bear on your suitability for this post?"},
+ {n:13,q:"Are you aware of any previous child-protection enquiries or allegations made against you, recently or in the past?"},
+ {n:14,q:"Have you ever been charged regarding any offence against a child or any offence of a sexual nature?"},
+ {n:15,q:"Has a 'finding of fact' (i.e. of child abuse) ever been made against you in a family court?"},
+ {n:16,q:"Have you ever had a child of yours, or a child you lived with, placed on a Child Protection Register?"},
+ {n:17,q:"Have you ever had a child prohibited from living with you by the family courts?"},
+ {n:18,q:"Have you ever been disqualified from caring for children?",hint:"An individual disqualified from working with children commits an offence if they knowingly apply for, offer to do, accept or do any work in a regulated position."},
+ {n:19,q:"Have you ever been part of a regulated service that has had its registration cancelled by the regulating body?"},
+ {n:20,q:"Have you ever been prohibited from being a private foster parent?"}
+];
+// Health / additional (Yes/No + details if Yes)
+var HEALTH=[
+ {n:21,q:"Are there any medical conditions or disorders we need to be aware of that may impact your ability to carry out your responsibilities?"},
+ {n:22,q:"Do you require any additional medical support from the organisation to carry out your role?"},
+ {n:23,q:"Is there anything additional you wish to disclose and discuss further?"}
+];
+var GENDER=["Male","Female","Gender Neutral","Transgender","Prefer not to say"];
+var ORIENT=["Heterosexual","Bi-sexual","Homosexual","Asexual","Prefer not to say"];
+var ETHNIC=["White British","White European","Black British","Black Caribbean","Black African","Asian British","Asian","Chinese","Mixed Race","Other Ethnicity"];
+var RELIGION=["Christian","Catholic","Buddhist","Hindu","Sikh","Muslim","Jewish","Rastafarian","Spiritual","None"];
+var CAND="",DATESTR="",ans={};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function todayUK(){return new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"});}
+function boot(){
+  if(!TOKEN){render("<div class='msg'><h2>Link not valid</h2><p>This declaration link is missing its code. Please use the link from your email.</p></div>");return;}
+  fetch(API+"/declaration-form-data?token="+encodeURIComponent(TOKEN),{cache:"no-store"})
+   .then(function(r){return r.json();})
+   .then(function(d){
+      if(!d||d.ok===false||!d.cand){render("<div class='msg'><h2>Link not valid</h2><p>We could not find this declaration. Please check your link.</p></div>");return;}
+      if(d.submitted){render("<div class='msg'><h2>Already submitted</h2><p>A declaration has already been completed for <b>"+esc(d.cand)+"</b>. Each candidate submits this once.</p></div>");return;}
+      CAND=d.cand;DATESTR=todayUK();form();
+   })
+   .catch(function(){render("<div class='msg'><h2>Could not load</h2><p>Please refresh to try again.</p><div class='err'>Network error.</div></div>");});
+}
+function render(h){document.getElementById("root").innerHTML=h;}
+function ynBlock(list){
+  var h="";
+  list.forEach(function(q){
+    h+="<div class='q'><div class='qt'><span class='num'>"+q.n+".</span>"+esc(q.q)+(q.hint?"<span class='hint'>"+esc(q.hint)+"</span>":"")+"</div>";
+    h+="<div class='yn' data-q='"+q.n+"'><button type='button' data-v='Yes'>Yes</button><button type='button' data-v='No'>No</button></div>";
+    h+="<div class='details' id='d"+q.n+"'><textarea id='dt"+q.n+"' rows='2' placeholder='If yes, please give details'></textarea></div></div>";
+  });
+  return h;
+}
+function form(){
+  var h="<h1>Employee Disclosure &amp; Declaration</h1><p class='sub'>Heart &amp; Home Living — safer recruitment</p>";
+  h+="<div class='intro'><p>As part of our safer recruitment policy we ask all employees to complete this disclosure and declaration so that the children in our care are appropriately safeguarded.</p><p>This post is covered by the Rehabilitation of Offenders Act 1974 (Exceptions) Order 1975 (as amended 2013). You may only exclude 'protected' offences from your answers. Failure to disclose relevant information may result in your application being rejected or, if appointed, disciplinary action. Any of the points below are not necessarily a barrier to employment; each case is treated on its merits.</p><p>Please answer <b>Yes or No</b> to every question. Where you answer Yes, please give details in the box that appears.</p></div>";
+  h+="<div class='meta'><div class='f'><label>Candidate</label><div class='val'>"+esc(CAND)+"</div></div><div class='f'><label>Date</label><div class='val'>"+esc(DATESTR)+"</div></div></div>";
+  h+="<div class='sec'><h2>Disclosure — safeguarding &amp; criminal history</h2><div class='line'></div>"+ynBlock(DISCLOSE)+"</div>";
+  h+="<div class='sec'><h2>Health</h2><div class='line'></div>"+ynBlock(HEALTH)+"</div>";
+  // Relationship
+  h+="<div class='sec'><h2>Relationship to any employee or Director</h2><div class='line'></div>";
+  h+="<div class='q'><div class='qt'>Are you related to any person(s) employed by the organisation, or acting as a Director?<span class='hint'>Restrictions may apply to appointing close relatives of existing staff. Failure to disclose may disqualify you or lead to dismissal.</span></div><div class='yn' data-q='rel'><button type='button' data-v='Yes'>Yes</button><button type='button' data-v='No'>No</button></div><div class='details' id='drel'><textarea id='dtrel' rows='2' placeholder='If yes, state the name and relationship of the employee or Director'></textarea></div></div></div>";
+  // E&D
+  h+="<div class='sec'><h2>Equality &amp; Diversity</h2><div class='line'></div><p class='sub'>We are committed to equality and diversity and recruit the right person irrespective of disability, ethnic origin, gender, religion or orientation. This section is optional.</p><div class='grid'>";
+  h+="<div class='f'><label>Gender</label><select id='gender'>"+opts(GENDER)+"</select></div>";
+  h+="<div class='f'><label>Sexual orientation</label><select id='orient'>"+opts(ORIENT)+"</select></div>";
+  h+="<div class='f'><label>Ethnicity</label><select id='ethnic'>"+opts(ETHNIC)+"</select></div>";
+  h+="<div class='f'><label>Religion</label><select id='religion'>"+opts(RELIGION)+"</select></div></div>";
+  h+="<div class='q' style='border:0'><div class='qt'>Do you consider yourself to have a disability?</div><div class='yn' data-q='dis'><button type='button' data-v='Yes'>Yes</button><button type='button' data-v='No'>No</button></div><div class='details' id='ddis'><textarea id='dtdis' rows='2' placeholder='If yes, please explain'></textarea><div class='grid' style='margin-top:8px'><div class='f'><label>Registered disabled — reference no. (if applicable)</label><input id='disref'></div><div class='f'><label>Registration date (if applicable)</label><input id='disdate' placeholder='dd/mm/yyyy'></div></div></div></div></div>";
+  // Declaration + sign
+  h+="<div class='sec'><h2>Declaration</h2><div class='line'></div><div class='decl'><p>I confirm and certify that I have read and understood the above provisions. The information I have given in this declaration is accurate and complete to the best of my knowledge.</p></div>";
+  h+="<div class='chk'><input type='checkbox' id='confirm'><label for='confirm' style='font-size:13.5px'>I confirm the above is accurate and complete, and I understand that failure to disclose relevant information may lead to rejection or dismissal.</label></div>";
+  h+="<div class='grid'><div class='f'><label>Print name <span class='req'>*</span></label><input id='printname' value=\""+esc(CAND)+"\"></div><div class='f'><label>Signature (type your full name) <span class='req'>*</span></label><input id='signname' placeholder='Type your full name to sign'></div><div class='f'><label>Date</label><div class='val'>"+esc(DATESTR)+"</div></div></div></div>";
+  h+="<div id='formerr'></div><div class='bar'><button class='submit' id='submitbtn'>Submit declaration</button></div>";
+  render(h);
+  document.querySelectorAll(".yn").forEach(function(row){
+    row.addEventListener("click",function(e){
+      var b=e.target.closest("button");if(!b)return;
+      var q=row.getAttribute("data-q"),v=b.getAttribute("data-v");
+      ans[q]=v;
+      row.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-v")===v);});
+      var det=document.getElementById("d"+q); if(det){ det.classList.toggle("show", v==="Yes"); }
+    });
+  });
+  document.getElementById("submitbtn").addEventListener("click",submit);
+}
+function opts(a){return "<option value=''>— select —</option>"+a.map(function(x){return "<option>"+esc(x)+"</option>";}).join("");}
+function collect(){
+  function block(list){return list.map(function(q){return {n:q.n,q:q.q,answer:ans[q.n]||"",details:(document.getElementById("dt"+q.n).value||"").trim()};});}
+  return {token:TOKEN,cand:CAND,date:DATESTR,
+    disclosure:block(DISCLOSE),health:block(HEALTH),
+    relationship:{answer:ans["rel"]||"",details:(document.getElementById("dtrel").value||"").trim()},
+    ed:{gender:val("gender"),orientation:val("orient"),ethnicity:val("ethnic"),religion:val("religion"),disability:ans["dis"]||"",disabilityDetails:(document.getElementById("dtdis").value||"").trim(),disReg:val("disref"),disDate:val("disdate")},
+    printName:val("printname"),signName:val("signname"),confirmed:document.getElementById("confirm").checked};
+}
+function val(id){var e=document.getElementById(id);return e?(e.value||"").trim():"";}
+function makePdf(d){
+  var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:"pt",format:"a4"});var M=42,W=515,y=54;
+  function nl(n){y+=(n||14);if(y>790){doc.addPage();y=54;}}
+  function wrap(t,size,style,col){doc.setFont("helvetica",style||"normal");doc.setFontSize(size||10);doc.setTextColor(col?col[0]:43,col?col[1]:36,col?col[2]:64);doc.splitTextToSize(t,W).forEach(function(l){doc.text(l,M,y);nl(size?size+3:13);});}
+  doc.setFont("helvetica","bold");doc.setFontSize(15);doc.setTextColor(107,79,187);doc.text("Employee Disclosure & Declaration",M,y);nl(20);
+  wrap("Heart & Home Living — safer recruitment",9,"normal",[106,99,131]);nl(2);
+  wrap("Candidate: "+d.cand,11,"bold");wrap("Date: "+d.date,10,"normal");nl(6);
+  wrap("Disclosure — safeguarding & criminal history",12,"bold",[107,79,187]);
+  d.disclosure.forEach(function(a){wrap(a.n+". "+a.q,9.5,"bold");wrap("Answer: "+(a.answer||"-")+(a.answer==="Yes"&&a.details?"  |  Details: "+a.details:""),9.5,"normal");nl(2);});
+  nl(4);wrap("Health",12,"bold",[107,79,187]);
+  d.health.forEach(function(a){wrap(a.n+". "+a.q,9.5,"bold");wrap("Answer: "+(a.answer||"-")+(a.answer==="Yes"&&a.details?"  |  Details: "+a.details:""),9.5,"normal");nl(2);});
+  nl(4);wrap("Relationship to any employee or Director",12,"bold",[107,79,187]);
+  wrap("Answer: "+(d.relationship.answer||"-")+(d.relationship.details?"  |  "+d.relationship.details:""),9.5,"normal");
+  nl(4);wrap("Equality & Diversity",12,"bold",[107,79,187]);
+  wrap("Gender: "+(d.ed.gender||"-")+"   Orientation: "+(d.ed.orientation||"-"),9.5,"normal");
+  wrap("Ethnicity: "+(d.ed.ethnicity||"-")+"   Religion: "+(d.ed.religion||"-"),9.5,"normal");
+  wrap("Disability: "+(d.ed.disability||"-")+(d.ed.disabilityDetails?" ("+d.ed.disabilityDetails+")":"")+(d.ed.disReg?"  Reg: "+d.ed.disReg:"")+(d.ed.disDate?"  Date: "+d.ed.disDate:""),9.5,"normal");
+  nl(8);wrap("Declaration",12,"bold",[107,79,187]);
+  wrap("I confirm and certify that I have read and understood the above provisions. The information I have given in this declaration is accurate and complete to the best of my knowledge.",9.5,"normal");
+  wrap("Confirmed: "+(d.confirmed?"Yes":"No"),9.5,"normal");
+  wrap("Print: "+(d.printName||"-")+"     Signed: "+(d.signName||"-")+"     Date: "+d.date,10,"bold");
+  return doc.output("blob");
+}
+function submit(){
+  var d=collect();var err=document.getElementById("formerr");err.innerHTML="";
+  var missing=[];
+  DISCLOSE.concat(HEALTH).forEach(function(q){if(!d.disclosure.concat(d.health).find(function(a){return a.n===q.n&&a.answer;})){missing.push(q.n);}});
+  if(!d.relationship.answer) missing.push("relationship");
+  if(missing.length){err.innerHTML="<div class='err'>Please answer Yes or No to every disclosure question. Missing: "+missing.join(", ")+"</div>";window.scrollTo(0,0);return;}
+  if(!d.confirmed){err.innerHTML="<div class='err'>Please tick the confirmation box.</div>";return;}
+  if(!d.printName||!d.signName){err.innerHTML="<div class='err'>Please complete Print name and Signature.</div>";return;}
+  var btn=document.getElementById("submitbtn");btn.disabled=true;btn.textContent="Submitting…";
+  var pdf;try{pdf=makePdf(d);}catch(e){err.innerHTML="<div class='err'>Could not build the PDF: "+esc(e.message)+"</div>";btn.disabled=false;btn.textContent="Submit declaration";return;}
+  var fd=new FormData();fd.append("payload",JSON.stringify(d));fd.append("declarationpdf",pdf,"Declaration - "+d.cand+".pdf");
+  fetch(API+"/declaration-submit",{method:"POST",body:fd})
+   .then(function(r){if(!r.ok)throw new Error("bad");return r.text();})
+   .then(function(){render("<div class='msg'><h2>Thank you</h2><p>Your declaration for <b>"+esc(d.cand)+"</b> has been submitted and saved to your file. There is nothing further to do.</p></div>");})
+   .catch(function(){err.innerHTML="<div class='err'>Submission failed. Please try again.</div>";btn.disabled=false;btn.textContent="Submit declaration";});
+}
+boot();
+</script></body></html>
