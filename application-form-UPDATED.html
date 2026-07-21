@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Application - Heart &amp; Home Living</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--p:#6b4fbb;--pl:#f3effc;--bd:#ddd6f0;--tx:#2b2440;--err:#d33}
+*{box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;background:var(--pl);color:var(--tx);margin:0;padding:16px}
+.wrap{max-width:760px;margin:0 auto;background:#fff;border-radius:14px;padding:28px;box-shadow:0 4px 18px rgba(80,60,140,.12)}
+h1{color:var(--p);margin:0 0 2px;font-size:26px}h2{margin:0 0 18px;font-size:16px;font-weight:400;color:#6a6383}
+h3{color:var(--p);border-bottom:2px solid var(--bd);padding-bottom:6px;margin-top:30px}
+h4{margin:14px 0 6px;color:#4a3d75}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+label .req{color:var(--err)}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;font-size:14px;font-family:inherit}
+textarea{min-height:70px}
+.note{background:var(--pl);border-left:4px solid var(--p);padding:10px 12px;border-radius:6px;font-size:13px;margin:10px 0}
+.blk{border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin:12px 0;background:#fbfaff}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;margin:10px 0}
+.chk input{width:auto}
+.hide{display:none}
+.err{color:var(--err);font-size:13px;margin:4px 0}
+button{background:var(--p);color:#fff;border:0;border-radius:10px;padding:14px 26px;font-size:16px;font-weight:600;cursor:pointer;margin-top:24px;width:100%}
+button:disabled{opacity:.5}
+#done{text-align:center;padding:40px 10px}
+#done h3{border:0}
+#errbox{background:#fdecec;border:1px solid #f5b5b5;border-radius:8px;padding:10px 14px;margin-top:16px;display:none}
+#errbox ul{margin:6px 0;padding-left:18px}
+.row{display:flex;gap:10px}.row>div{flex:1}
+@media(max-width:560px){.row{flex-direction:column;gap:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="formArea">
+<h1>Heart &amp; Home Living</h1>
+<h2>Job Application Form</h2>
+<form id="af" novalidate>
+
+<h3>1. Personal Details</h3>
+<label>Full Name <span class="req">*</span></label><input id="fullName" required>
+<label>Date of Birth <span class="req">*</span></label><input id="dob" type="date" required>
+<div class="row"><div>
+<label>Email Address <span class="req">*</span></label><input id="email" type="email" required placeholder="name@example.com">
+</div><div>
+<label>Phone Number <span class="req">*</span> (numbers only)</label><input id="phone" inputmode="numeric" required placeholder="07123456789">
+</div></div>
+<label>Home Address (with postcode) <span class="req">*</span></label><textarea id="homeAddress" required></textarea>
+<label>Previous Addresses - last 5 years (including time at each) <span class="req">*</span></label><textarea id="prevAddresses" required></textarea>
+<label>National Insurance Number</label><input id="ni">
+
+<h3>2. Right to Work &amp; Driving</h3>
+<label>What is your current visa / right to work status? <span class="req">*</span></label>
+<select id="visaType" required><option value="">Select...</option><option>British Citizen</option><option>Dependent Visa</option><option>Student Visa or PSW</option><option>Skilled Worker Visa</option></select>
+<div id="visaExpiryWrap" class="hide"><label>Visa expiry date <span class="req">*</span></label><input id="visaExpiry" type="date"></div>
+<div id="visaGrantWrap" class="hide"><label>Date your Skilled Worker visa was first granted <span class="req">*</span></label><input id="visaGrant" type="date"></div>
+<div id="shareCodeWrap" class="hide"><label>Right to work share code <span class="req">*</span></label><input id="shareCode" placeholder="e.g. ABC-DEF-GHI"><div class="note">If you are not a British citizen, generate a share code at gov.uk/prove-right-to-work and enter it here.</div></div>
+<label>Do you hold a driving licence? <span class="req">*</span></label>
+<select id="licence" required><option value="">Select...</option><option>Yes</option><option>No</option></select>
+<div id="licWrap" class="hide">
+<label>Licence type <span class="req">*</span></label>
+<select id="licType"><option value="">Select...</option><option>Full</option><option>Provisional</option></select>
+<label>Driving licence number <span class="req">*</span></label><input id="licNo">
+</div>
+<label>Do you have any endorsements? <span class="req">*</span></label>
+<select id="endorse" required><option value="">Select...</option><option>Yes</option><option>No</option></select>
+<label>Do you have a DBS on the update system? <span class="req">*</span></label>
+<select id="dbs" required><option value="">Select...</option><option>Yes</option><option>Applied</option><option>No</option></select>
+<label>Job Role you are applying for <span class="req">*</span></label>
+<select id="jobRole" required><option value="">Select...</option><option>Support Worker</option><option>Senior Support Worker</option><option>Deputy Manager</option><option>Manager</option><option>Bank Contract Worker</option><option>Regional Manager</option><option>Positive Behaviour Specialist</option></select>
+
+<h3>3. Education &amp; Qualifications</h3>
+<div class="note">Please list your education in chronological order. <b>Also include your NVQ Level if completed or currently pursuing.</b> Your first entry is required; another entry will appear automatically once you complete one.</div>
+<div id="eduList"></div>
+
+<h3>4. Employment History</h3>
+<div class="note">Start with your <b>current or most recent employer</b>. Then add ALL previous employment including voluntary work, most recent first, back to when you left formal education. A new entry appears automatically as you complete each one. We need at least 3 references - tick the reference box on past employers to use them (fewer is fine only if you have fewer than 3 employers).</div>
+<div class="blk">
+<h4>Current / Most Recent Employer</h4>
+<label>Company name <span class="req">*</span></label><input id="curCompany">
+<label>Your job title <span class="req">*</span></label><input id="curTitle">
+<div class="row"><div><label>Start date <span class="req">*</span></label><input id="curStart" type="date"></div>
+<div id="curEndWrap"><label>End date</label><input id="curEnd" type="date"></div></div>
+<div class="chk"><input type="checkbox" id="curCurrent"><span>I still work here</span></div>
+<label>Main duties</label><textarea id="curDuties"></textarea>
+<div class="chk"><input type="checkbox" id="curCare"><span>This is/was a care role</span></div>
+<div class="note">Your current/most recent employer is always used as a reference.</div>
+<label>Reference contact name <span class="req">*</span></label><input id="curRefName">
+<label>Reference email address <span class="req">*</span></label><input id="curRefEmail" type="email">
+<label>Reference contact number (optional)</label><input id="curRefPhone" inputmode="numeric">
+<label>May we contact this employer now? <span class="req">*</span></label>
+<select id="curPermission"><option value="">Select...</option><option value="yes">Yes, you may contact them now</option><option value="no">Not yet - please wait until offer stage</option></select>
+</div>
+<div id="empList"></div>
+<label>Gaps in employment (dates and reasons)</label><textarea id="gaps"></textarea>
+
+<h3>5. Why You?</h3>
+<label>Drawing on your knowledge, skills and experience, explain your suitability for the post <span class="req">*</span></label>
+<textarea id="whyYou" style="min-height:120px"></textarea>
+
+<h3>6. Documents</h3>
+<div class="note">Please upload your Passport and Proof of address. If you hold a driving licence, upload the front and back too. All uploads should be a PDF or a clear photo/scan.</div>
+<label>Passport type <span class="req">*</span></label>
+<select id="passportType" required><option value="">Select...</option><option>British</option><option>International</option></select>
+<div id="intlPassportNote" class="note hide">As an International passport holder, please also enter your right to work share code in Section 2 above.</div>
+<label>Passport <span class="req">*</span> (PDF or image)</label><input id="passport" type="file" accept=".pdf,.jpg,.jpeg,.png">
+<div id="licenceDocWrap" class="hide">
+<label>Driving licence - front <span class="req">*</span> (PDF or image)</label><input id="licenceFront" type="file" accept=".pdf,.jpg,.jpeg,.png">
+<label>Driving licence - back <span class="req">*</span> (PDF or image)</label><input id="licenceBack" type="file" accept=".pdf,.jpg,.jpeg,.png">
+</div>
+<label>Proof of address <span class="req">*</span> (PDF or image)</label><input id="addressproof" type="file" accept=".pdf,.jpg,.jpeg,.png">
+<div class="note">A bank statement or utility bill must be dated within the last 3 months. A council tax bill may be dated within the last 12 months.</div>
+<label>Photo ID, e.g. biometric residence permit or other government photo ID <span class="req">*</span></label><input id="photoid" type="file" accept=".pdf,.jpg,.jpeg,.png">
+<label>A recent head-and-shoulders photo for your staff ID card <span class="req">*</span> (image)</label><input id="idphoto" type="file" accept=".jpg,.jpeg,.png">
+
+<div id="errbox"><b>Please fix the following:</b><ul id="errlist"></ul></div>
+<button type="submit" id="sbtn">Submit Application</button>
+</form>
+</div>
+<div id="done" class="hide"><h3>Application received</h3><p>Thank you. Your application has been submitted to Heart &amp; Home Living. Our recruitment team will be in touch.</p></div>
+</div>
+<script>
+var SUBMIT_URL = "https://ruthbloch.app.n8n.cloud/webhook/job-application-v2-submit";
+function buildAppPdf(p){
+if(!window.jspdf||!window.jspdf.jsPDF){return null;}
+var doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"});
+var M=48;var W=595-2*M;var y=56;
+function pageCheck(extra){if(y+(extra||0)>790){doc.addPage();y=56;}}
+function heading(txt){y+=10;pageCheck(30);doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(107,79,187);doc.text(txt,M,y);doc.setDrawColor(221,214,240);doc.line(M,y+4,M+W,y+4);doc.setTextColor(43,36,64);y+=20;}
+function kv(k,v){if(v===undefined||v===null||String(v).trim()===""){return;}doc.setFontSize(9.5);doc.setFont("helvetica","bold");var kw=doc.getTextWidth(k+": ");var lines=doc.splitTextToSize(String(v),W-kw);pageCheck(lines.length*12+4);doc.text(k+":",M,y);doc.setFont("helvetica","normal");doc.text(lines,M+kw,y);y+=lines.length*12+4;}
+function sub(txt){pageCheck(16);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(txt,M,y);y+=14;}
+doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(107,79,187);doc.text("Heart & Home Living",M,y);y+=18;
+doc.setFontSize(12);doc.setTextColor(43,36,64);doc.text("Job Application Form",M,y);y+=18;
+doc.setFont("helvetica","normal");doc.setFontSize(9.5);
+doc.text("Submitted: "+new Date().toISOString().slice(0,16).replace("T"," ")+" (completed online via secure single-use link)",M,y);y+=14;
+heading("1. Personal Details");
+kv("Full name",p.fullName);kv("Date of birth",p.dob);kv("Email",p.email);kv("Phone",p.phone);kv("Home address",p.homeAddress);kv("Previous addresses (last 5 years)",p.prevAddresses);kv("National Insurance no",p.ni);kv("Job role applied for",p.jobRole);
+heading("2. Right to Work & Driving");
+kv("Visa / right to work",p.visaType);kv("Visa expiry date",p.visaExpiry);kv("Visa grant date",p.visaGrant);kv("Right to work share code",p.shareCode);
+kv("Driving licence",p.licence+(p.licType?" ("+p.licType+(p.licNo?", no. "+p.licNo:"")+")":""));
+kv("Endorsements",p.endorse);kv("DBS on update system",p.dbs);
+heading("3. Education & Qualifications");
+(p.education||[]).forEach(function(e,i){sub("Education "+(i+1));kv("Place of study",e.place);kv("From",e.from);kv("To",e.to);kv("Course & qualification",e.course);});
+heading("4. Employment History");
+var ce=p.currentEmp||{};
+sub("Current / most recent employer");
+kv("Company",ce.company);kv("Job title",ce.title);kv("Start date",ce.start);kv("End date",ce.current?"Still employed":ce.end);kv("Duties",ce.duties);kv("Care role",ce.care?"Yes":"No");
+kv("Referee",(ce.refName||"")+(ce.refEmail?" ("+ce.refEmail+(ce.refPhone?", "+ce.refPhone:"")+")":""));
+kv("May we contact now",ce.permission==="no"?"Not yet - hold until offer stage":"Yes");
+(p.employers||[]).forEach(function(e,i){sub("Previous employer "+(i+1));kv("Company",e.company);kv("Start date",e.start);kv("End date",e.end);kv("Duties",e.duties);kv("Reason for leaving",e.reason);kv("Care role",e.care?"Yes":"No");if(e.isRef){kv("Referee",(e.refName||"")+(e.refEmail?" ("+e.refEmail+(e.refPhone?", "+e.refPhone:"")+")":""));}});
+kv("Gaps in employment",p.gaps);
+heading("5. Supporting Statement");
+kv("Why you",p.whyYou);
+heading("6. Documents provided");
+kv("Passport type",p.passportType);
+y+=8;pageCheck(30);doc.setFont("helvetica","italic");doc.setFontSize(8.5);doc.setTextColor(106,99,131);
+var foot=doc.splitTextToSize("This application was completed online through the Heart & Home Living secure application form. Uploaded documents (passport, driving licence, proof of address and any others provided) are attached to the application separately. Equality & diversity monitoring, health and criminal self-disclosure are collected on the separate signed Declaration form.",W);
+doc.text(foot,M,y);
+return doc.output("blob");
+}
+var TID = "PREVIEW";
+var TOKEN = "PREVIEW";
+function $id(x){return document.getElementById(x);}
+function digits(el){el.addEventListener("input",function(){this.value=this.value.replace(/\D/g,"");});}
+digits($id("phone"));digits($id("curRefPhone"));
+function toggle(sel,wrap,showVal){$id(sel).addEventListener("change",function(){var s=(this.value===showVal);$id(wrap).classList.toggle("hide",!s);});}
+toggle("licence","licWrap","Yes");
+toggle("licence","licenceDocWrap","Yes");
+$id("visaType").addEventListener("change",function(){var v=this.value;$id("visaExpiryWrap").classList.toggle("hide",!(v==="Dependent Visa"||v==="Student Visa or PSW"));$id("visaGrantWrap").classList.toggle("hide",v!=="Skilled Worker Visa");$id("shareCodeWrap").classList.toggle("hide",!(v&&v!=="British Citizen"));});
+$id("passportType").addEventListener("change",function(){$id("intlPassportNote").classList.toggle("hide",this.value!=="International");});
+$id("curCurrent").addEventListener("change",function(){$id("curEndWrap").classList.toggle("hide",this.checked);if(this.checked){$id("curEnd").value="";}});
+
+var eduN=0;
+function addEdu(){eduN++;var d=document.createElement("div");d.className="blk edu";d.innerHTML=`<h4>Education ${eduN}${eduN===1?" <span class=req>*</span>":" (optional)"}</h4>`+
+`<label>Place of study</label><input class="e-place">`+
+`<div class="row"><div><label>From</label><input type="date" class="e-from"></div><div><label>To</label><input type="date" class="e-to"></div></div>`+
+`<label>Course and qualification (include NVQ level if any)</label><input class="e-course">`;
+$id("eduList").appendChild(d);}
+addEdu();
+$id("eduList").addEventListener("input",function(){var b=$id("eduList").querySelectorAll(".edu");var last=b[b.length-1];if(q(last,"e-place")&&q(last,"e-from")&&q(last,"e-to")&&q(last,"e-course")){addEdu();}});
+function q(blk,cls){var el=blk.querySelector("."+cls);return el?el.value.trim():"";}
+
+var empN=0;
+function addEmp(){empN++;var d=document.createElement("div");d.className="blk emp";d.innerHTML=`<h4>Previous Employer ${empN} (most recent first)</h4>`+
+`<label>Company name</label><input class="m-co">`+
+`<div class="row"><div><label>Start date</label><input type="date" class="m-start"></div><div><label>End date</label><input type="date" class="m-end"></div></div>`+
+`<label>Job title and main duties</label><textarea class="m-duties"></textarea>`+
+`<label>Reason for leaving</label><input class="m-reason">`+
+`<div class="chk"><input type="checkbox" class="m-care"><span>This was a care role</span></div>`+
+`<div class="chk"><input type="checkbox" class="m-isref"><span>Use this employer as a reference</span></div>`+
+`<div class="refbox hide"><label>Reference contact name <span class=req>*</span></label><input class="m-refname">`+
+`<label>Reference email address <span class=req>*</span></label><input type="email" class="m-refemail">`+
+`<label>Reference contact number (optional)</label><input inputmode="numeric" class="m-refphone"></div>`;
+$id("empList").appendChild(d);
+var rp=d.querySelector(".m-refphone");rp.addEventListener("input",function(){this.value=this.value.replace(/\D/g,"");});
+d.querySelector(".m-isref").addEventListener("change",function(){d.querySelector(".refbox").classList.toggle("hide",!this.checked);});
+d.querySelector(".m-care").addEventListener("change",function(){if(this.checked&&!d.querySelector(".m-isref").checked){d.querySelector(".m-isref").checked=true;d.querySelector(".refbox").classList.remove("hide");}});}
+addEmp();
+$id("empList").addEventListener("input",function(){var b=$id("empList").querySelectorAll(".emp");var last=b[b.length-1];if(q(last,"m-co")&&q(last,"m-start")&&q(last,"m-duties")){addEmp();}});
+
+function collectEdu(){var out=[];$id("eduList").querySelectorAll(".edu").forEach(function(b){var o={place:q(b,"e-place"),from:q(b,"e-from"),to:q(b,"e-to"),course:q(b,"e-course")};if(o.place||o.course||o.from){out.push(o);}});return out;}
+function collectEmp(){var out=[];$id("empList").querySelectorAll(".emp").forEach(function(b){var o={company:q(b,"m-co"),start:q(b,"m-start"),end:q(b,"m-end"),duties:q(b,"m-duties"),reason:q(b,"m-reason"),care:b.querySelector(".m-care").checked,isRef:b.querySelector(".m-isref").checked,refName:q(b,"m-refname"),refEmail:q(b,"m-refemail"),refPhone:q(b,"m-refphone")};if(o.company||o.duties){out.push(o);}});return out;}
+var emailRe=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+document.getElementById("af").addEventListener("submit",function(ev){
+ev.preventDefault();var errs=[];
+function need(id,msg){if(!$id(id).value.trim()){errs.push(msg);}}
+need("fullName","Full name");need("dob","Date of birth");need("homeAddress","Home address");need("prevAddresses","Previous addresses");
+if(!emailRe.test($id("email").value.trim())){errs.push("A valid email address");}
+if(!$id("phone").value.trim()){errs.push("Phone number (numbers only)");}
+var vt=$id("visaType").value;if(!vt){errs.push("Visa / right to work status");}
+if((vt==="Dependent Visa"||vt==="Student Visa or PSW")&&!$id("visaExpiry").value){errs.push("Visa expiry date");}
+if(vt==="Skilled Worker Visa"&&!$id("visaGrant").value){errs.push("Skilled Worker visa grant date");}
+if(vt&&vt!=="British Citizen"&&!$id("shareCode").value.trim()){errs.push("Right to work share code");}
+var lic=$id("licence").value;if(!lic){errs.push("Driving licence yes/no");}
+if(lic==="Yes"){if(!$id("licType").value){errs.push("Licence type (Full or Provisional)");}if(!$id("licNo").value.trim()){errs.push("Driving licence number");}}
+need("endorse","Endorsements yes/no");need("dbs","DBS on update system");need("jobRole","Job role");
+var edu=collectEdu();if(!edu.length||!(edu[0].place&&edu[0].from&&edu[0].to&&edu[0].course)){errs.push("At least one complete education entry (place, dates, course)");}
+need("curCompany","Current employer - company name");need("curTitle","Current employer - job title");need("curStart","Current employer - start date");
+need("curRefName","Current employer - reference name");
+if(!emailRe.test($id("curRefEmail").value.trim())){errs.push("Current employer - valid reference email");}
+if(!$id("curPermission").value){errs.push("Permission to contact current employer");}
+var emps=collectEmp();
+emps.forEach(function(e,i){if(e.isRef){if(!e.refName){errs.push("Previous employer "+(i+1)+" - reference name");}if(!emailRe.test(e.refEmail)){errs.push("Previous employer "+(i+1)+" - valid reference email");}}});
+var refCount=1+emps.filter(function(e){return e.isRef;}).length;
+var needRefs=Math.min(3,1+emps.length);
+if(refCount<needRefs){errs.push("At least "+needRefs+" references - tick the reference box on "+(needRefs-refCount)+" more previous employer(s)");}
+need("whyYou","Why you - suitability statement");
+if(!$id("passportType").value){errs.push("Passport type (British or International)");}
+if(!$id("passport").files.length){errs.push("Passport upload");}
+if(lic==="Yes"){if(!$id("licenceFront").files.length){errs.push("Driving licence - front upload");}if(!$id("licenceBack").files.length){errs.push("Driving licence - back upload");}}
+if(!$id("addressproof").files.length){errs.push("Proof of address upload");}
+if(!$id("photoid").files.length){errs.push("Photo ID upload");}
+if(!$id("idphoto").files.length){errs.push("Head-and-shoulders photo for staff ID card");}
+var box=$id("errbox");var list=$id("errlist");
+if(errs.length){list.innerHTML=errs.map(function(e){return "<li>"+e+"</li>";}).join("");box.style.display="block";box.scrollIntoView({behavior:"smooth"});return;}
+box.style.display="none";
+var p={tid:TID,token:TOKEN,fullName:$id("fullName").value.trim(),dob:$id("dob").value,email:$id("email").value.trim(),phone:$id("phone").value.trim(),homeAddress:$id("homeAddress").value.trim(),prevAddresses:$id("prevAddresses").value.trim(),ni:$id("ni").value.trim(),visaType:vt,visaExpiry:$id("visaExpiry").value,visaGrant:$id("visaGrant").value,shareCode:$id("shareCode").value.trim(),licence:lic,licType:$id("licType").value,licNo:$id("licNo").value.trim(),endorse:$id("endorse").value,dbs:$id("dbs").value,jobRole:$id("jobRole").value,education:edu,currentEmp:{company:$id("curCompany").value.trim(),title:$id("curTitle").value.trim(),start:$id("curStart").value,current:$id("curCurrent").checked,end:$id("curEnd").value,duties:$id("curDuties").value.trim(),care:$id("curCare").checked,refName:$id("curRefName").value.trim(),refEmail:$id("curRefEmail").value.trim(),refPhone:$id("curRefPhone").value.trim(),permission:$id("curPermission").value},employers:emps,gaps:$id("gaps").value.trim(),whyYou:$id("whyYou").value.trim(),passportType:$id("passportType").value};
+var fd=new FormData();fd.append("payload",JSON.stringify(p));
+if($id("passport").files.length){fd.append("passport",$id("passport").files[0]);}
+if($id("licenceFront").files.length){fd.append("licenceFront",$id("licenceFront").files[0]);}
+if($id("licenceBack").files.length){fd.append("licenceBack",$id("licenceBack").files[0]);}
+if($id("addressproof").files.length){fd.append("addressproof",$id("addressproof").files[0]);}
+if($id("photoid").files.length){fd.append("photoid",$id("photoid").files[0]);}
+if($id("idphoto").files.length){fd.append("idphoto",$id("idphoto").files[0]);}
+var appPdf=null;try{appPdf=buildAppPdf(p);}catch(e){appPdf=null;}
+if(appPdf){fd.append("apppdf",appPdf,("Application - "+(p.fullName||"candidate")+".pdf").replace(/[\\/:*?"<>|]/g,""));}
+var btn=$id("sbtn");btn.disabled=true;btn.textContent="Submitting...";
+fetch(SUBMIT_URL,{method:"POST",body:fd}).then(function(r){if(!r.ok){throw new Error("bad");}$id("formArea").classList.add("hide");$id("done").classList.remove("hide");window.scrollTo(0,0);}).catch(function(){btn.disabled=false;btn.textContent="Submit Application";list.innerHTML="<li>Something went wrong sending your application. Please try again.</li>";box.style.display="block";});
+});
+</script>
+</body>
+</html>
