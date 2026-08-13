@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recruitment Report - Heart &amp; Home Living</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{color-scheme:light;--p:#6b4fbb;--p2:#8a6fd4;--bg:#f5f2fb;--pane:#fff;--bd:#e6e1f2;--tx:#2b2440;--mut:#6f6890;--g:#2ecd6f;--a:#e8a13a;--r:#e5484d;--gr:#cfcbdd}
 *{box-sizing:border-box}
@@ -27,7 +26,7 @@ h1{font-size:24px;margin:2px 0 0}
 .chartwrap{position:relative;height:240px}
 .homebars .hb{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}
 .homebars .hb .bar{height:16px;background:var(--p2);border-radius:4px;min-width:2px}
-.homebars .hb .nm{width:130px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.homebars .hb .nm{width:150px;color:var(--mut);line-height:1.2;font-size:12px}
 .homebars .hb .ct{font-weight:700;width:24px;text-align:right}
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 select{padding:8px 10px;border:1px solid var(--bd);border-radius:9px;font-size:13px;background:#fff}
@@ -61,7 +60,7 @@ a.nm{color:var(--tx);text-decoration:none}a.nm:hover{color:var(--p);text-decorat
 <div id="report" style="display:none">
 <div class="cards" id="kpis"></div>
 <div class="grid2">
-<div class="pane"><h2>Pipeline by stage</h2><div class="chartwrap"><canvas id="stageChart"></canvas></div></div>
+<div class="pane"><h2>Pipeline by stage</h2><div class="homebars" id="stagebars"></div></div>
 <div class="pane"><h2>Candidates by home</h2><div class="homebars" id="homebars"></div></div>
 </div>
 <div class="pane">
@@ -111,12 +110,10 @@ function kpis(){
   document.getElementById("kpis").innerHTML=cards.map(function(x){return '<div class="card'+(x[2]?" warn":"")+'"><div class="n">'+x[1]+'</div><div class="l">'+x[0]+'</div></div>';}).join("");
   return c;
 }
-function drawChart(c){
-  var labels=STAGES.filter(function(s){return s!=="(no stage)"||c[s]>0;});
-  var data=labels.map(function(s){return c[s]||0;});
-  var cols=labels.map(function(s){return STAGECOL[s];});
-  if(chart)chart.destroy();
-  chart=new Chart(document.getElementById("stageChart"),{type:"bar",data:{labels:labels,datasets:[{data:data,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{precision:0}}}}});
+function stageBars(c){
+  var arr=STAGES.filter(function(s){return (c[s]||0)>0;});
+  var max=Math.max(1,Math.max.apply(null,arr.map(function(s){return c[s];})));
+  document.getElementById("stagebars").innerHTML=arr.map(function(s){var col=STAGECOL[s]||"#8a94a6";return '<div class="hb"><span class="nm" title="'+esc(s)+'">'+esc(s)+'</span><span class="bar" style="width:'+Math.round(c[s]/max*170)+'px;background:'+col+'"></span><span class="ct">'+c[s]+'</span></div>';}).join("");
 }
 function homeBars(){
   var m={};rows.forEach(function(r){m[r.home]=(m[r.home]||0)+1;});
@@ -148,7 +145,7 @@ function renderTable(){
   }).join("");
   document.getElementById("rowcount").textContent=list.length+" of "+rows.length+" shown";
 }
-function render(){var c=kpis();drawChart(c);homeBars();fillFilters();renderTable();}
+function render(){var c=kpis();stageBars(c);homeBars();fillFilters();renderTable();}
 document.querySelectorAll("#tbl th").forEach(function(th){th.onclick=function(){var k=th.getAttribute("data-k");if(sortK===k)sortAsc=!sortAsc;else{sortK=k;sortAsc=true;}renderTable();};});
 load();
 </script>
