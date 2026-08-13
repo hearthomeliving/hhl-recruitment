@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recruitment Report - Heart &amp; Home Living</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{color-scheme:light;--p:#6b4fbb;--p2:#8a6fd4;--bg:#f5f2fb;--pane:#fff;--bd:#e6e1f2;--tx:#2b2440;--mut:#6f6890;--g:#2ecd6f;--a:#e8a13a;--r:#e5484d;--gr:#cfcbdd}
+*{box-sizing:border-box}
+body{font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--tx);margin:0;padding:20px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.brand{font-size:13px;font-weight:700;letter-spacing:.4px;color:var(--p);text-transform:uppercase}
+h1{font-size:24px;margin:2px 0 0}
+.gen{font-size:12px;color:var(--mut)}
+.btn{background:var(--p);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.card{background:var(--pane);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden}
+.card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--p)}
+.card.warn:before{background:var(--r)}
+.card .n{font-size:30px;font-weight:800;line-height:1}
+.card .l{font-size:12px;color:var(--mut);margin-top:6px}
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:18px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+.pane{background:var(--pane);border:1px solid var(--bd);border-radius:14px;padding:16px}
+.pane h2{font-size:14px;margin:0 0 12px;color:var(--p);text-transform:uppercase;letter-spacing:.4px}
+.chartwrap{position:relative;height:240px}
+.homebars .hb{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}
+.homebars .hb .bar{height:16px;background:var(--p2);border-radius:4px;min-width:2px}
+.homebars .hb .nm{width:130px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.homebars .hb .ct{font-weight:700;width:24px;text-align:right}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+select{padding:8px 10px;border:1px solid var(--bd);border-radius:9px;font-size:13px;background:#fff}
+label.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}
+.count{font-size:12px;color:var(--mut);margin-left:auto}
+.tblwrap{overflow:auto;max-height:560px;border:1px solid var(--bd);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 10px;border-bottom:1px solid #f0edf7;white-space:nowrap}
+th{color:var(--mut);font-weight:600;position:sticky;top:0;background:#faf9fe;cursor:pointer;z-index:1}
+td.c,th.c{text-align:center}
+tr:hover td{background:#faf9fe}
+tr.flag td{background:#fdeff0}
+tr.flag:hover td{background:#fce6e8}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#fff}
+.chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;background:#efeafa;color:var(--p);font-weight:600}
+.dot{display:inline-block;width:13px;height:13px;border-radius:50%;background:var(--gr);vertical-align:middle}
+.dot.g{background:var(--g)}.dot.a{background:var(--a)}.dot.r{background:var(--r)}
+.warnicon{color:var(--r);font-weight:800;margin-left:4px}
+.legend{font-size:12px;color:var(--mut);margin-top:12px;display:flex;gap:18px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+#msg{color:var(--mut);font-size:14px;padding:30px 0;text-align:center}
+a.nm{color:var(--tx);text-decoration:none}a.nm:hover{color:var(--p);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="top">
+<div><div class="brand">Heart &amp; Home Living</div><h1>Recruitment Report</h1><div class="gen" id="gen"></div></div>
+<button class="btn" onclick="load()">Refresh</button>
+</div>
+<div id="msg">Loading live data...</div>
+<div id="report" style="display:none">
+<div class="cards" id="kpis"></div>
+<div class="grid2">
+<div class="pane"><h2>Pipeline by stage</h2><div class="chartwrap"><canvas id="stageChart"></canvas></div></div>
+<div class="pane"><h2>Candidates by home</h2><div class="homebars" id="homebars"></div></div>
+</div>
+<div class="pane">
+<h2>Safer-recruitment checks</h2>
+<div class="controls">
+<select id="fHome"></select>
+<select id="fStage"></select>
+<label class="chk"><input type="checkbox" id="fIssues"> Only show outstanding (Hired)</label>
+<span class="count" id="rowcount"></span>
+</div>
+<div class="tblwrap"><table id="tbl"><thead><tr>
+<th data-k="name">Candidate</th><th data-k="home">Home</th><th data-k="role">Role</th><th data-k="stage">Stage</th>
+<th class="c" data-k="ref1">Ref 1</th><th class="c" data-k="ref2">Ref 2</th><th class="c" data-k="dbs">DBS</th><th class="c" data-k="rtw">Right to work</th><th class="c" data-k="contract">Contract</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="legend">
+<span><i class="dot g"></i> complete</span><span><i class="dot a"></i> in progress / attention</span><span><i class="dot"></i> not started</span>
+<span><span class="warnicon">!</span> Hired but a check is still outstanding</span>
+</div>
+</div>
+</div>
+<script>
+var API="https://ruthbloch.app.n8n.cloud/webhook/recruitment-report-data";
+var STAGES=["Application Form Submitted","Offer Email Sent","DocuSign Contract Sent","Hired","Withdraw Letter","Reject","(no stage)"];
+var STAGECOL={"Application Form Submitted":"#8a94a6","Offer Email Sent":"#02bcd4","DocuSign Contract Sent":"#8f8ff0","Hired":"#2ecd6f","Withdraw Letter":"#ff4081","Reject":"#e5484d","(no stage)":"#cfcbdd"};
+var rows=[],sortK="stage",sortAsc=true,chart=null;
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function refDot(s){if(s==="Received"||s==="Verified")return "g";if(s==="Requested"||s==="Chased")return "a";if(s==="Concern"||s==="On Hold")return "r";return "";}
+function dbsDot(s){if(s==="Certificate Issued")return "g";if(s)return "a";return "";}
+function dot(cls,title){return '<span class="dot '+cls+'" title="'+esc(title)+'"></span>';}
+async function load(){
+  document.getElementById("msg").style.display="block";document.getElementById("msg").textContent="Loading live data...";
+  try{
+    var d=await (await fetch(API,{cache:"no-store"})).json();
+    rows=d.tasks||[];
+    document.getElementById("gen").textContent="Live from ClickUp - "+rows.length+" candidates - refreshed "+new Date(d.generatedAt||Date.now()).toLocaleString("en-GB");
+    render();
+    document.getElementById("msg").style.display="none";
+    document.getElementById("report").style.display="block";
+  }catch(e){document.getElementById("msg").textContent="Could not load data ("+e.message+"). Press Refresh to retry.";}
+}
+function kpis(){
+  var c={};STAGES.forEach(function(s){c[s]=0;});
+  rows.forEach(function(r){if(c[r.stage]!=null)c[r.stage]++;});
+  var pipeline=(c["Application Form Submitted"]||0)+(c["Offer Email Sent"]||0)+(c["DocuSign Contract Sent"]||0);
+  var flags=rows.filter(function(r){return r.flag;}).length;
+  var cards=[["Total candidates",rows.length,0],["In pipeline",pipeline,0],["Hired",c["Hired"]||0,0],["Offers out",c["Offer Email Sent"]||0,0],["Contracts sent",c["DocuSign Contract Sent"]||0,0],["Hired - checks outstanding",flags,1]];
+  document.getElementById("kpis").innerHTML=cards.map(function(x){return '<div class="card'+(x[2]?" warn":"")+'"><div class="n">'+x[1]+'</div><div class="l">'+x[0]+'</div></div>';}).join("");
+  return c;
+}
+function drawChart(c){
+  var labels=STAGES.filter(function(s){return s!=="(no stage)"||c[s]>0;});
+  var data=labels.map(function(s){return c[s]||0;});
+  var cols=labels.map(function(s){return STAGECOL[s];});
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById("stageChart"),{type:"bar",data:{labels:labels,datasets:[{data:data,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{precision:0}}}}});
+}
+function homeBars(){
+  var m={};rows.forEach(function(r){m[r.home]=(m[r.home]||0)+1;});
+  var arr=Object.keys(m).map(function(h){return [h,m[h]];}).sort(function(a,b){return b[1]-a[1];});
+  var max=arr.length?arr[0][1]:1;
+  document.getElementById("homebars").innerHTML=arr.map(function(x){return '<div class="hb"><span class="nm" title="'+esc(x[0])+'">'+esc(x[0])+'</span><span class="bar" style="width:'+Math.round(x[1]/max*160)+'px"></span><span class="ct">'+x[1]+'</span></div>';}).join("");
+}
+function fillFilters(){
+  var homes=Array.from(new Set(rows.map(function(r){return r.home;}))).sort();
+  document.getElementById("fHome").innerHTML='<option value="">All homes</option>'+homes.map(function(h){return '<option>'+esc(h)+'</option>';}).join("");
+  document.getElementById("fStage").innerHTML='<option value="">All stages</option>'+STAGES.filter(function(s){return s!=="(no stage)";}).map(function(s){return '<option>'+esc(s)+'</option>';}).join("");
+  document.getElementById("fHome").onchange=renderTable;document.getElementById("fStage").onchange=renderTable;document.getElementById("fIssues").onchange=renderTable;
+}
+function renderTable(){
+  var hf=document.getElementById("fHome").value,sf=document.getElementById("fStage").value,iss=document.getElementById("fIssues").checked;
+  var list=rows.filter(function(r){return (!hf||r.home===hf)&&(!sf||r.stage===sf)&&(!iss||r.flag);});
+  list.sort(function(a,b){var x=(a[sortK]||"").toString().toLowerCase(),y=(b[sortK]||"").toString().toLowerCase();return (x<y?-1:x>y?1:0)*(sortAsc?1:-1);});
+  document.querySelector("#tbl tbody").innerHTML=list.map(function(r){
+    var col=STAGECOL[r.stage]||"#8a94a6";
+    return '<tr class="'+(r.flag?"flag":"")+'">'+
+      '<td><a class="nm" href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'+(r.flag?'<span class="warnicon" title="Hired with outstanding checks">!</span>':'')+'</td>'+
+      '<td><span class="chip">'+esc(r.home)+'</span></td><td>'+esc(r.role)+'</td>'+
+      '<td><span class="badge" style="background:'+col+'">'+esc(r.stage)+'</span></td>'+
+      '<td class="c">'+dot(refDot(r.ref1),r.ref1||"Not requested")+'</td>'+
+      '<td class="c">'+dot(refDot(r.ref2),r.ref2||"Not requested")+'</td>'+
+      '<td class="c">'+dot(dbsDot(r.dbs),r.dbs||"Not started")+'</td>'+
+      '<td class="c">'+dot(r.rtw?"g":"",r.rtw?"Checked":"Not checked")+'</td>'+
+      '<td class="c">'+dot(r.contract==="Yes"?"g":"",r.contract==="Yes"?"Signed":"Not signed")+'</td></tr>';
+  }).join("");
+  document.getElementById("rowcount").textContent=list.length+" of "+rows.length+" shown";
+}
+function render(){var c=kpis();drawChart(c);homeBars();fillFilters();renderTable();}
+document.querySelectorAll("#tbl th").forEach(function(th){th.onclick=function(){var k=th.getAttribute("data-k");if(sortK===k)sortAsc=!sortAsc;else{sortK=k;sortAsc=true;}renderTable();};});
+load();
+</script>
+</body>
+</html>
