@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Application Form Upload</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;max-width:620px;margin:32px auto;padding:0 16px;color:#1d2b3a}
+h1{font-size:20px;margin-bottom:4px}
+.box{border:2px dashed #b7c3d0;border-radius:10px;padding:28px;text-align:center;background:#f7fafc;margin-top:16px}
+button{background:#2d7ff9;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;cursor:pointer;margin-top:12px}
+button[disabled]{opacity:.5;cursor:default}
+#msg{margin-top:16px;font-size:14px;line-height:1.4}
+.ok{color:#127a3d}.err{color:#c0392b}
+small{color:#64748b}
+</style>
+</head>
+<body>
+<h1>Upload a completed application form</h1>
+<p><small>Creates a card on the Recruitment list at the Application Form Submitted stage with the details filled in. PDF only for now. Everything is read automatically and must be checked on the card afterwards.</small></p>
+<div class="box">
+<input type="file" id="f" accept="application/pdf">
+<br>
+<button id="b" onclick="go()">Upload and create card</button>
+</div>
+<div id="msg"></div>
+<script>
+async function go(){
+  var f=document.getElementById('f').files[0];
+  var m=document.getElementById('msg');
+  var b=document.getElementById('b');
+  if(!f){m.className='err';m.textContent='Please choose a PDF first.';return;}
+  b.disabled=true;m.className='';m.textContent='Reading the form and creating the card, this can take up to a minute...';
+  var fd=new FormData();fd.append('form',f,f.name);
+  try{
+    var r=await fetch('https://ruthbloch.app.n8n.cloud/webhook/app-form-upload',{method:'POST',body:fd});
+    if(r.ok){m.className='ok';m.textContent='Done. A card has been created on the Recruitment list under Application Form Submitted. Open ClickUp to review and correct it.';}
+    else{m.className='err';m.textContent='Something went wrong (status '+r.status+'). Please try again or enter the card manually.';}
+  }catch(e){m.className='err';m.textContent='Upload failed: '+e.message;}
+  b.disabled=false;
+}
+</script>
+</body>
+</html>
