@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Certificates - HHL (Sandbox)</title>
+<style>
+:root { --bg:#f4f6f9; --card:#fff; --ink:#1f2733; --muted:#6b7686; --green:#16a34a; --red:#dc2626; --amber:#d97706; --border:#e3e8ef; --blue:#2563eb; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+header { background:#101828; color:#fff; padding:14px 22px; width:100%; display:flex; align-items:center; gap:12px; }
+header h1 { font-size:17px; font-weight:600; }
+.badge { background:var(--amber); color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
+.panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:26px; margin:34px 16px; width:100%; max-width:500px; box-shadow:0 2px 10px rgba(16,24,40,.06); }
+.tabs { display:flex; gap:8px; margin-bottom:20px; }
+.tab { flex:1; text-align:center; padding:10px 8px; border:1px solid var(--border); border-radius:9px; font-size:13px; font-weight:700; cursor:pointer; color:var(--muted); background:#f8fafc; }
+.tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+p.hint { font-size:12.5px; color:var(--muted); margin-bottom:6px; line-height:1.5; }
+label { display:block; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:14px 0 5px; }
+label .opt { text-transform:none; font-weight:500; letter-spacing:0; }
+select, input[type=date], input[type=time], input[type=text], textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:9px; font-size:14px; background:#fff; color:var(--ink); font-family:inherit; }
+textarea { min-height:70px; resize:vertical; }
+input[type=file] { width:100%; padding:9px; border:1px dashed var(--border); border-radius:9px; font-size:13px; background:#f8fafc; }
+button.main { width:100%; margin-top:22px; padding:12px; background:var(--blue); color:#fff; border:0; border-radius:9px; font-size:14.5px; font-weight:700; cursor:pointer; }
+button.main:disabled { opacity:.5; cursor:default; }
+#msg { margin-top:16px; font-size:13.5px; line-height:1.5; display:none; padding:12px 14px; border-radius:9px; }
+#msg.ok { display:block; background:#dcfce7; color:var(--green); }
+#msg.err { display:block; background:#fee2e2; color:var(--red); }
+.info { margin-top:14px; padding:11px 13px; border-radius:9px; background:#dbeafe; color:#1e40af; font-size:13px; line-height:1.5; display:none; }
+.info.warn { background:#fef3c7; color:#92400e; }
+.info.bad { background:#fee2e2; color:#991b1b; }
+footer { font-size:11.5px; color:var(--muted); padding:0 16px 24px; text-align:center; max-width:500px; line-height:1.5; }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+<header><h1>Heart &amp; Home Living &mdash; Property Certificates</h1><span class="badge">SANDBOX</span></header>
+<div class="panel">
+  <div class="tabs">
+    <div class="tab active" id="tab-cert">Certificate</div>
+    <div class="tab" id="tab-book">Book contractor</div>
+    <div class="tab" id="tab-done">Job done</div>
+  </div>
+  <p class="hint" id="hint-cert">New or renewed certificate? Upload it here. It is filed on the right home, the old one is kept as history, the dates are updated and it is checked for faults automatically.</p>
+  <p class="hint hidden" id="hint-book">Engineer or contractor booked for a job? Record the date here so everyone can see it is in hand.</p>
+  <p class="hint hidden" id="hint-done">Job finished? Mark it done here. Your name and the date are recorded on the job.</p>
+  <form id="form">
+    <label for="home">Home</label>
+    <select id="home"><option value="">Loading&hellip;</option></select>
+
+    <div id="f-cert">
+      <label for="ctype">Certificate</label>
+      <select id="ctype">
+        <option value="">Select a certificate&hellip;</option>
+        <option>Fire Risk Assessment</option><option>Gas Safety</option><option>Electrical (EICR)</option><option>Fire Alarm</option><option>Emergency Lighting</option><option>Fire Extinguishers</option><option>PAT</option><option>Legionella / Water</option><option>Health &amp; Safety</option><option>EPC</option>
+      </select>
+      <div class="info" id="curcert"></div>
+      <label for="cdate">Date of inspection</label>
+      <input type="date" id="cdate">
+      <label for="cdue">Next due date <span class="opt">(optional, worked out for you if left blank)</span></label>
+      <input type="date" id="cdue">
+      <label for="cfile">Certificate (PDF)</label>
+      <input type="file" id="cfile" accept=".pdf,application/pdf">
+      <label for="ccon">Contractor <span class="opt">(optional)</span></label>
+      <input type="text" id="ccon" placeholder="e.g. Elite Gas">
+    </div>
+
+    <div id="f-book" class="hidden">
+      <label for="bjob">Contractor job</label>
+      <select id="bjob"><option value="">Select a home first&hellip;</option></select>
+      <div class="info" id="curbook"></div>
+      <label for="bdate">Booked date</label>
+      <input type="date" id="bdate">
+      <label for="btime">Time <span class="opt">(optional)</span></label>
+      <input type="time" id="btime">
+      <label for="bcon">Contractor / engineer</label>
+      <input type="text" id="bcon" placeholder="e.g. A Buxton">
+    </div>
+
+    <div id="f-done" class="hidden">
+      <label for="djob">Job</label>
+      <select id="djob"><option value="">Select a home first&hellip;</option></select>
+      <div class="info" id="curdone"></div>
+      <label for="ddate">Date done</label>
+      <input type="date" id="ddate">
+      <label for="dnotes">What was done <span class="opt">(optional)</span></label>
+      <textarea id="dnotes" placeholder="e.g. Detector fitted and linked to the alarm panel"></textarea>
+      <label for="dfile">Proof <span class="opt">(job sheet, invoice or photo &mdash; strongly advised for Urgent and High jobs)</span></label>
+      <input type="file" id="dfile" accept=".pdf,image/*">
+    </div>
+
+    <label for="by">Your name</label>
+    <input type="text" id="by" placeholder="Your name">
+    <button type="submit" class="main" id="btn">Upload certificate</button>
+  </form>
+  <div id="msg"></div>
+</div>
+<footer>Everything saved here goes straight into ClickUp. The dashboard shows it after its next refresh.</footer>
+<script>
+var DATA_URL = 'https://ruthbloch.app.n8n.cloud/webhook/cert-data';
+var UPLOAD_URL = 'https://ruthbloch.app.n8n.cloud/webhook/cert-upload';
+var BOOK_URL = 'https://ruthbloch.app.n8n.cloud/webhook/cert-book';
+var DONE_URL = 'https://ruthbloch.app.n8n.cloud/webhook/cert-done';
+var D = null, mode = 'cert';
+var LABELS = { cert:'Upload certificate', book:'Save booking', done:'Mark as done' };
+var RANK = { urgent:0, high:1, normal:2, low:3 };
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function dfmt(ms){ return ms ? new Date(Number(ms)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'not set'; }
+var today = new Date().toISOString().slice(0,10);
+el('cdate').max = today; el('ddate').value = today; el('ddate').max = today; el('bdate').min = today;
+
+function setMode(m){
+  mode = m;
+  ['cert','book','done'].forEach(function(k){
+    el('tab-'+k).className = 'tab' + (k===m ? ' active' : '');
+    el('hint-'+k).className = 'hint' + (k===m ? '' : ' hidden');
+    el('f-'+k).className = k===m ? '' : 'hidden';
+  });
+  el('btn').textContent = LABELS[m];
+  el('msg').className = ''; el('msg').style.display = 'none';
+  refreshBits();
+}
+el('tab-cert').onclick = function(){ setMode('cert'); };
+el('tab-book').onclick = function(){ setMode('book'); };
+el('tab-done').onclick = function(){ setMode('done'); };
+
+function showInfo(id, html, cls){ var b = el(id); if(!html){ b.style.display='none'; b.innerHTML=''; return; } b.className = 'info' + (cls ? ' '+cls : ''); b.innerHTML = html; b.style.display = 'block'; }
+
+function refreshBits(){
+  if(!D) return;
+  var home = el('home').value;
+  var type = el('ctype').value;
+  if(home && type){
+    var cs = D.certificates.filter(function(c){ return c.home===home && c.type===type; }).sort(function(a,b){ return (b.expiry||0)-(a.expiry||0); });
+    if(cs.length){
+      var c = cs[0];
+      var cls = c.state==='overdue' ? 'bad' : (c.state==='due-soon' ? 'warn' : '');
+      var when = c.expiry ? (c.daysLeft < 0 ? 'expired '+Math.abs(c.daysLeft)+' days ago' : c.daysLeft+' days left') : 'no due date recorded';
+      showInfo('curcert', 'Current certificate: <b>'+esc(c.name)+'</b><br>Next due <b>'+dfmt(c.expiry)+'</b> ('+when+'). Uploading a new one archives this one.', cls);
+    } else showInfo('curcert', 'No '+esc(type)+' on file for '+esc(home)+' yet. A new certificate record will be created.', 'warn');
+  } else showInfo('curcert', '');
+  var open = D.faults.filter(function(f){ return !f.closed && f.home===home; }).sort(function(a,b){ return (RANK[a.severity]-RANK[b.severity]) || ((a.due||9e15)-(b.due||9e15)); });
+  fillJobs('bjob', open.filter(function(f){ return f.category==='maintenance'; }), 'No open contractor jobs for this home');
+  fillJobs('djob', open, 'No open jobs for this home');
+  jobInfo();
+}
+function fillJobs(id, list, emptyText){
+  var sel = el(id), keep = sel.value;
+  if(!el('home').value){ sel.innerHTML = '<option value="">Select a home first&hellip;</option>'; return; }
+  if(!list.length){ sel.innerHTML = '<option value="">'+emptyText+'</option>'; return; }
+  sel.innerHTML = '<option value="">Select a job&hellip;</option>' + list.map(function(f){
+    return '<option value="'+f.id+'">['+f.severity.toUpperCase()+'] '+(f.category==='home'?'Home: ':'Contractor: ')+esc(f.title)+' ('+esc(f.cert)+')</option>';
+  }).join('');
+  if(keep) sel.value = keep;
+}
+function findJob(id){ return D ? D.faults.filter(function(f){ return f.id===id; })[0] : null; }
+function jobInfo(){
+  var b = findJob(el('bjob').value);
+  if(b) showInfo('curbook', (b.booked ? 'Already booked: <b>'+esc(b.booked)+'</b>. Saving replaces this.<br>' : 'Not booked yet. ') + 'Due by <b>'+dfmt(b.due)+'</b>.', b.due && b.due < Date.now() ? 'bad' : ''); else showInfo('curbook','');
+  var d = findJob(el('djob').value);
+  if(d) showInfo('curdone', '<b>'+esc(d.title)+'</b><br>'+(d.category==='home'?'Home job':'Contractor job')+' &middot; '+d.severity.toUpperCase()+' &middot; due '+dfmt(d.due)+(d.booked?'<br>Booked: '+esc(d.booked):''), (d.severity==='urgent'||d.severity==='high') ? 'warn' : ''); else showInfo('curdone','');
+}
+el('home').onchange = refreshBits;
+el('ctype').onchange = refreshBits;
+el('bjob').onchange = jobInfo;
+el('djob').onchange = jobInfo;
+
+function load(){
+  return fetch(DATA_URL + '?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){
+    D = d;
+    var keep = el('home').value;
+    el('home').innerHTML = '<option value="">Select a home&hellip;</option>' + d.homes.map(function(h){ return '<option>'+h+'</option>'; }).join('');
+    if(keep) el('home').value = keep;
+    refreshBits();
+  }).catch(function(){ el('home').innerHTML = '<option value="">Could not load homes &mdash; refresh the page</option>'; });
+}
+load();
+
+el('form').onsubmit = function(ev){
+  ev.preventDefault();
+  var msg = el('msg'), btn = el('btn');
+  var fd = new FormData(), url;
+  var home = el('home').value, by = el('by').value.trim();
+  function fail(t){ msg.className = 'err'; msg.textContent = t; }
+  if(!home) return fail('Please choose a home.');
+  if(!by) return fail('Please enter your name.');
+  fd.append('home', home); fd.append('by', by);
+  if(mode==='cert'){
+    var f = el('cfile').files[0];
+    if(!el('ctype').value) return fail('Please choose the certificate.');
+    if(!el('cdate').value) return fail('Please enter the date of inspection.');
+    if(!f) return fail('Please attach the certificate PDF.');
+    url = UPLOAD_URL;
+    fd.append('type', el('ctype').value); fd.append('date', el('cdate').value); fd.append('due', el('cdue').value || ''); fd.append('contractor', el('ccon').value || ''); fd.append('file', f, f.name);
+  } else if(mode==='book'){
+    if(!el('bjob').value) return fail('Please choose the job.');
+    if(!el('bdate').value) return fail('Please enter the booked date.');
+    if(!el('bcon').value.trim()) return fail('Please enter the contractor.');
+    url = BOOK_URL;
+    fd.append('taskId', el('bjob').value); fd.append('date', el('bdate').value); fd.append('time', el('btime').value || ''); fd.append('contractor', el('bcon').value.trim());
+  } else {
+    if(!el('djob').value) return fail('Please choose the job.');
+    url = DONE_URL;
+    var p = el('dfile').files[0];
+    fd.append('taskId', el('djob').value); fd.append('date', el('ddate').value || today); fd.append('notes', el('dnotes').value || '');
+    if(p) fd.append('proof', p, p.name);
+  }
+  btn.disabled = true; btn.textContent = 'Saving&hellip;'.replace('&hellip;', '...');
+  msg.className = ''; msg.style.display = 'none';
+  fetch(url, { method:'POST', body: fd }).then(function(r){ return r.json(); }).then(function(out){
+    if(out.ok){
+      msg.className = 'ok'; msg.textContent = '✓ ' + (out.message || 'Saved.');
+      if(mode==='cert'){ el('cfile').value=''; el('cdue').value=''; }
+      if(mode==='done'){ el('dfile').value=''; el('dnotes').value=''; el('djob').value=''; }
+      load();
+    } else { msg.className = 'err'; msg.textContent = 'Not saved: ' + (out.message || 'unknown error'); }
+  }).catch(function(e){ msg.className = 'err'; msg.textContent = 'Could not reach the system. Please try again.'; })
+  .then(function(){ btn.disabled = false; btn.textContent = LABELS[mode]; });
+};
+</script>
+</body>
+</html>
