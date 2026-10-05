@@ -87,7 +87,7 @@ a{color:#bcd3ff}
       <div class="stamp" id="stamp"></div>
     </div>
     <div class="btns">
-      <a class="btn" id="addbtn" target="_blank">+ Add / renew a certificate</a>
+      <a class="btn" id="addbtn" target="_blank">+ Add certificate / book / mark done</a>
       <button class="btn ghost" id="refresh">&#8635; Refresh</button>
     </div>
   </div>
@@ -96,7 +96,7 @@ a{color:#bcd3ff}
 </div>
 <script>
 var DATA_URL = "data.json"; var REBUILD_URL = "https://ruthbloch.app.n8n.cloud/webhook/cert-rebuild";
-var ADD_URL = "https://ruthbloch.app.n8n.cloud/form/61caced9-3c93-452c-a07b-f1a50b698932";
+var ADD_URL = "form.html";
 document.getElementById('addbtn').href = ADD_URL;
 var TYPES = ['Fire Risk Assessment','Gas Safety','Electrical (EICR)','Fire Alarm','Emergency Lighting','Fire Extinguishers','PAT','Legionella / Water','Health & Safety','EPC'];
 var SHORT = {'Fire Risk Assessment':'FRA','Gas Safety':'Gas','Electrical (EICR)':'EICR','Fire Alarm':'Fire alarm','Emergency Lighting':'Em. lighting','Fire Extinguishers':'Extinguishers','PAT':'PAT','Legionella / Water':'Legionella','Health & Safety':'H&amp;S','EPC':'EPC'};
