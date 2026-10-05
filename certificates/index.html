@@ -92,10 +92,10 @@ a{color:#bcd3ff}
     </div>
   </div>
   <div class="chips" id="homechips"></div>
-  <div id="content"><div class="loading">Loading live data from ClickUp&hellip;</div></div>
+  <div id="content"><div class="loading">Loading the latest snapshot&hellip;</div></div>
 </div>
 <script>
-var DATA_URL = "https://ruthbloch.app.n8n.cloud/webhook/cert-data";
+var DATA_URL = "data.json"; var REBUILD_URL = "https://ruthbloch.app.n8n.cloud/webhook/cert-rebuild";
 var ADD_URL = "https://app.clickup.com/90151368133/v/l/li/1200740000002866";
 document.getElementById('addbtn').href = ADD_URL;
 var TYPES = ['Fire Risk Assessment','Gas Safety','Electrical (EICR)','Fire Alarm','Emergency Lighting','Fire Extinguishers','PAT','Legionella / Water','Health & Safety','EPC'];
@@ -189,7 +189,7 @@ function render(){
 
   buildMatrix(); buildJobs(); buildFixed(); buildReports(); buildCharts();
   document.getElementById('q').addEventListener('input', function(e){ S.q = e.target.value; buildJobs(); });
-  document.getElementById('stamp').textContent = 'Live from ClickUp via n8n · updated ' + new Date(D.generated).toLocaleString('en-GB');
+  document.getElementById('stamp').textContent = 'Snapshot taken ' + new Date(D.snapshot || D.generated).toLocaleString('en-GB') + ' · updates on the 1st of each month, or press Refresh';
 }
 
 function buildMatrix(){
@@ -294,9 +294,9 @@ function load(){
     .then(function(d){ D = d; render(); })
     .catch(function(){ document.getElementById('content').innerHTML = '<div class="loading err">Could not load live data. Check the Property Certificates Data API is active, then Refresh.</div>'; });
 }
-document.getElementById('refresh').addEventListener('click', load);
+var rbtn = document.getElementById('refresh');
+rbtn.addEventListener('click', function(){ rbtn.disabled = true; rbtn.textContent = 'Refreshing...'; fetch(REBUILD_URL + '?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){ D = d; render(); }).catch(function(){ alert('Refresh did not work. Try again in a minute.'); }).then(function(){ rbtn.disabled = false; rbtn.innerHTML = '&#8635; Refresh'; }); });
 load();
-setInterval(load, 120000);
 </script>
 </body>
 </html>
