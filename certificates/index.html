@@ -87,7 +87,7 @@ a{color:#bcd3ff}
       <div class="stamp" id="stamp"></div>
     </div>
     <div class="btns">
-      <a class="btn" id="addbtn" target="_blank">+ Add certificate / book / mark done</a>
+      <a class="btn" id="addbtn" target="_blank">+ Add / renew a certificate</a>
       <button class="btn ghost" id="refresh">&#8635; Refresh</button>
     </div>
   </div>
@@ -228,7 +228,7 @@ function buildJobs(){
 
 function buildFixed(){
   var list = D.faults.filter(function(f){ return f.closed && f.confirmedBy && inHome(f); }).sort(function(a,b){ return (b.dateClosed||0)-(a.dateClosed||0); }).slice(0,12);
-  if(!list.length){ document.getElementById('fixedbox').innerHTML = '<div class="empty">Nothing confirmed fixed yet. When a manager ticks a job complete, it appears here with their name and date.</div>'; return; }
+  if(!list.length){ document.getElementById('fixedbox').innerHTML = '<div class="empty">Nothing confirmed fixed yet. When someone ticks a fault complete in ClickUp, it appears here with their name and date.</div>'; return; }
   var h = '<table><tbody>';
   list.forEach(function(f){ h += '<tr class="link" data-a="open" data-v="'+esc(f.url)+'"><td>&#9989; '+esc(f.title)+'<br><span style="color:var(--muted);font-size:12px">'+esc(f.home)+' &middot; '+esc(f.confirmedBy)+' &middot; '+esc(f.confirmedOn)+'</span></td></tr>'; });
   document.getElementById('fixedbox').innerHTML = h + '</tbody></table>';
