@@ -124,9 +124,9 @@ el('form').onsubmit = function(ev){
   btn.disabled = true; btn.textContent = 'Uploading...';
   msg.className = ''; msg.style.display = 'none';
   fetch(UPLOAD_URL, { method:'POST', body: fd }).then(function(r){ return r.json(); }).then(function(out){
-    if(out.ok){ msg.className = 'ok'; msg.textContent = 'Saved. ' + (out.message || ''); el('cfile').value=''; load(); }
-    else { msg.className = 'err'; msg.textContent = 'Not saved: ' + (out.message || 'unknown error'); }
-  }).catch(function(){ msg.className = 'err'; msg.textContent = 'Not saved. Please check every box is filled in and try again. If it keeps failing, tell Adrian the time you tried.'; })
+    if(out.ok){ msg.className = 'ok'; msg.innerHTML = '<b>✓ ' + esc(out.message || 'The certificate has been uploaded.') + '</b>' + (out.detail ? '<br>' + esc(out.detail) : ''); el('cfile').value=''; load(); }
+    else { msg.className = 'err'; msg.textContent = 'Not uploaded: ' + (out.message || 'unknown error'); }
+  }).catch(function(){ msg.className = 'err'; msg.textContent = 'Not uploaded. Please check every box is filled in and try again. If it keeps failing, tell Adrian the time you tried.'; })
   .then(function(){ btn.disabled = false; btn.textContent = 'Upload certificate'; });
 };
 </script>
