@@ -23,7 +23,8 @@ button.main:disabled { opacity:.5; cursor:default; }
 #msg { margin-top:16px; font-size:13.5px; line-height:1.5; display:none; padding:12px 14px; border-radius:9px; }
 #msg.ok { display:block; background:#dcfce7; color:var(--green); }
 #msg.err { display:block; background:#fee2e2; color:var(--red); }
-.info { margin-top:14px; padding:11px 13px; border-radius:9px; background:#dbeafe; color:#1e40af; font-size:13px; line-height:1.5; display:none; }
+.info { margin-top:10px; padding:11px 13px; border-radius:9px; background:#dbeafe; color:#1e40af; font-size:13px; line-height:1.5; display:none; }
+.info.ok { background:#dcfce7; color:#166534; }
 .info.warn { background:#fef3c7; color:#92400e; }
 .info.bad { background:#fee2e2; color:#991b1b; }
 footer { font-size:11.5px; color:var(--muted); padding:0 16px 24px; text-align:center; max-width:500px; line-height:1.5; }
@@ -33,7 +34,7 @@ footer { font-size:11.5px; color:var(--muted); padding:0 16px 24px; text-align:c
 <header><h1>Heart &amp; Home Living &mdash; Property Certificates</h1><span class="badge">SANDBOX</span></header>
 <div class="panel">
   <h2>Add or renew a certificate</h2>
-  <p class="hint">Upload a new or renewed certificate. It is filed on the right home, the previous one is kept as history, the dates are updated, and any faults it lists are added to the Home Issues and Contractor Jobs lists for information.</p>
+  <p class="hint">Upload a new or renewed certificate. It is filed on the right home, the previous one is kept as history, the next due date is worked out for you, and any faults it lists are added to the Home Issues and Contractor Jobs lists for information.</p>
   <form id="form">
     <label for="home">Home</label>
     <select id="home"><option value="">Loading&hellip;</option></select>
@@ -45,8 +46,14 @@ footer { font-size:11.5px; color:var(--muted); padding:0 16px 24px; text-align:c
     <div class="info" id="curcert"></div>
     <label for="cdate">Date of inspection</label>
     <input type="date" id="cdate">
-    <label for="cdue">Next due date <span class="opt">(optional, worked out for you if left blank)</span></label>
-    <input type="date" id="cdue">
+    <label for="cvalid">Valid for</label>
+    <select id="cvalid">
+      <option value="6">6 months</option>
+      <option value="12" selected>12 months</option>
+      <option value="60">5 years</option>
+      <option value="120">10 years (EPC)</option>
+    </select>
+    <div class="info" id="nextdue"></div>
     <label for="cfile">Certificate (PDF)</label>
     <input type="file" id="cfile" accept=".pdf,application/pdf">
     <label for="ccon">Contractor <span class="opt">(optional)</span></label>
@@ -61,24 +68,38 @@ footer { font-size:11.5px; color:var(--muted); padding:0 16px 24px; text-align:c
 <script>
 var DATA_URL = 'https://ruthbloch.app.n8n.cloud/webhook/cert-data';
 var UPLOAD_URL = 'https://ruthbloch.app.n8n.cloud/webhook/cert-upload';
+var PERIOD = { 'Fire Risk Assessment':12, 'Gas Safety':12, 'Electrical (EICR)':60, 'Fire Alarm':6, 'Emergency Lighting':6, 'Fire Extinguishers':12, 'PAT':12, 'Legionella / Water':12, 'Health & Safety':12, 'EPC':120 };
 var D = null;
 function el(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function dfmt(ms){ return ms ? new Date(Number(ms)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'not set'; }
+function plabel(m){ return m==6 ? '6 months' : m==12 ? '12 months' : m==60 ? '5 years' : '10 years'; }
 el('cdate').max = new Date().toISOString().slice(0,10);
-function showInfo(html, cls){ var b = el('curcert'); if(!html){ b.style.display='none'; b.innerHTML=''; return; } b.className = 'info' + (cls ? ' '+cls : ''); b.innerHTML = html; b.style.display = 'block'; }
+function show(id, html, cls){ var b = el(id); if(!html){ b.style.display='none'; b.innerHTML=''; return; } b.className = 'info' + (cls ? ' '+cls : ''); b.innerHTML = html; b.style.display = 'block'; }
+function calcDue(){
+  var iso = el('cdate').value, m = parseInt(el('cvalid').value, 10), type = el('ctype').value;
+  if(!iso){ show('nextdue', 'Enter the inspection date and the next due date is worked out for you.', ''); return; }
+  var d = new Date(iso + 'T12:00:00'); d.setMonth(d.getMonth() + m);
+  var txt = 'Next due date: <b>' + dfmt(d.getTime()) + '</b> (' + plabel(m) + ' from the inspection date).';
+  var cls = 'ok';
+  if(type && PERIOD[type] && PERIOD[type] !== m){ txt += '<br>Note: ' + esc(type) + ' is normally valid for ' + plabel(PERIOD[type]) + '.'; cls = 'warn'; }
+  if(d.getTime() < Date.now()){ txt += '<br>This date has already passed, so the certificate will show as expired.'; cls = 'bad'; }
+  show('nextdue', txt, cls);
+}
 function refreshBits(){
-  if(!D) return;
   var home = el('home').value, type = el('ctype').value;
-  if(!home || !type){ showInfo(''); return; }
+  if(!D || !home || !type){ show('curcert', ''); return; }
   var cs = D.certificates.filter(function(c){ return c.home===home && c.type===type; }).sort(function(a,b){ return (b.expiry||0)-(a.expiry||0); });
-  if(!cs.length){ showInfo('No '+esc(type)+' on file for '+esc(home)+' yet. A new certificate record will be created.', 'warn'); return; }
+  if(!cs.length){ show('curcert', 'No '+esc(type)+' on file for '+esc(home)+' yet. A new certificate record will be created.', 'warn'); return; }
   var c = cs[0];
   var when = c.expiry ? (c.daysLeft < 0 ? 'expired '+Math.abs(c.daysLeft)+' days ago' : c.daysLeft+' days left') : 'no due date recorded';
-  showInfo('Current certificate: <b>'+esc(c.name)+'</b><br>Next due <b>'+dfmt(c.expiry)+'</b> ('+when+'). Uploading a new one archives this one.', c.state==='overdue' ? 'bad' : (c.state==='due-soon' ? 'warn' : ''));
+  show('curcert', 'Current certificate: <b>'+esc(c.name)+'</b><br>Next due <b>'+dfmt(c.expiry)+'</b> ('+when+'). Uploading a new one archives this one.', c.state==='overdue' ? 'bad' : (c.state==='due-soon' ? 'warn' : ''));
 }
 el('home').onchange = refreshBits;
-el('ctype').onchange = refreshBits;
+el('ctype').onchange = function(){ var t = el('ctype').value; if(PERIOD[t]) el('cvalid').value = String(PERIOD[t]); refreshBits(); calcDue(); };
+el('cdate').onchange = calcDue; el('cdate').oninput = calcDue;
+el('cvalid').onchange = calcDue;
+calcDue();
 function load(){
   return fetch(DATA_URL + '?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){
     D = d; var keep = el('home').value;
@@ -99,13 +120,13 @@ el('form').onsubmit = function(ev){
   if(!f) return fail('Please attach the certificate PDF.');
   if(!el('by').value.trim()) return fail('Please enter your name.');
   var fd = new FormData();
-  fd.append('home', el('home').value); fd.append('type', el('ctype').value); fd.append('date', el('cdate').value); fd.append('due', el('cdue').value || ''); fd.append('contractor', el('ccon').value || ''); fd.append('by', el('by').value.trim()); fd.append('file', f, f.name);
+  fd.append('home', el('home').value); fd.append('type', el('ctype').value); fd.append('date', el('cdate').value); fd.append('valid', el('cvalid').value); fd.append('contractor', el('ccon').value || ''); fd.append('by', el('by').value.trim()); fd.append('file', f, f.name);
   btn.disabled = true; btn.textContent = 'Uploading...';
   msg.className = ''; msg.style.display = 'none';
   fetch(UPLOAD_URL, { method:'POST', body: fd }).then(function(r){ return r.json(); }).then(function(out){
-    if(out.ok){ msg.className = 'ok'; msg.textContent = 'Saved. ' + (out.message || ''); el('cfile').value=''; el('cdue').value=''; load(); }
+    if(out.ok){ msg.className = 'ok'; msg.textContent = 'Saved. ' + (out.message || ''); el('cfile').value=''; load(); }
     else { msg.className = 'err'; msg.textContent = 'Not saved: ' + (out.message || 'unknown error'); }
-  }).catch(function(){ msg.className = 'err'; msg.textContent = 'Could not reach the system. Please try again.'; })
+  }).catch(function(){ msg.className = 'err'; msg.textContent = 'Not saved. Please check every box is filled in and try again. If it keeps failing, tell Adrian the time you tried.'; })
   .then(function(){ btn.disabled = false; btn.textContent = 'Upload certificate'; });
 };
 </script>
