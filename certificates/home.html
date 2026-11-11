@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home Certificates</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<style>
+:root{--bg:#0e1726;--panel:#15233c;--ink:#eaf0fb;--muted:#9fb1d0;--line:rgba(255,255,255,.08);--accent:#4f8cff;--good:#34d399;--warn:#fbbf24;--bad:#f87171;--radius:16px}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,#1b2c49 0%,#0e1726 55%);color:var(--ink);min-height:100vh}
+.wrap{max-width:1240px;margin:0 auto;padding:26px 20px 60px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+h1{font-size:26px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0}
+.stamp{color:var(--muted);font-size:12px;margin-top:6px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:rgba(255,255,255,.08)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.section-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 2px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 14px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
+.chip:hover{background:rgba(79,140,255,.22)}
+.chip.sel{background:var(--accent);border-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer;transition:transform .08s}
+.kpi:hover{transform:translateY(-2px);border-color:rgba(79,140,255,.5)}
+.kpi.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,140,255,.35)}
+.kpi .n{font-size:28px;font-weight:800;line-height:1}
+.kpi .l{font-size:11px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
+.kpi.red .n{color:var(--bad)} .kpi.amber .n{color:var(--warn)} .kpi.green .n{color:var(--good)} .kpi.grey .n{color:var(--muted)}
+.homes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media (max-width:1000px){.homes{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.homes{grid-template-columns:1fr 1fr}}
+.home{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer}
+.home:hover{border-color:rgba(79,140,255,.5)}
+.home.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,140,255,.35)}
+.home .nm{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot.red{background:var(--bad);box-shadow:0 0 10px rgba(248,113,113,.7)} .dot.amber{background:var(--warn)} .dot.green{background:var(--good)}
+.home .rows{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.7}
+.home .rows b{color:var(--ink)}
+.home .next{margin-top:6px;font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.chartbox{position:relative;height:260px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+tr.link{cursor:pointer}
+tr.link:hover td{background:rgba(79,140,255,.08)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.pill.overdue{background:rgba(248,113,113,.22);color:#fca5a5}
+.pill.d30{background:rgba(251,146,60,.2);color:#fdba74}
+.pill.d60{background:rgba(251,191,36,.18);color:var(--warn)}
+.pill.ok{background:rgba(52,211,153,.15);color:var(--good)}
+.pill.unknown{background:rgba(255,255,255,.08);color:var(--muted)}
+.matrix{overflow-x:auto}
+.matrix td.cell{text-align:center;cursor:pointer;border-radius:8px;font-size:12px;font-weight:700;white-space:nowrap}
+.cell.ok{background:rgba(52,211,153,.12);color:var(--good)}
+.cell.d60{background:rgba(251,191,36,.16);color:var(--warn)}
+.cell.d30{background:rgba(251,146,60,.2);color:#fdba74}
+.cell.overdue{background:rgba(248,113,113,.2);color:var(--bad)}
+.cell.unknown{background:rgba(255,255,255,.05);color:var(--muted)}
+.cell.missing{background:repeating-linear-gradient(45deg,rgba(255,255,255,.03),rgba(255,255,255,.03) 6px,rgba(255,255,255,.07) 6px,rgba(255,255,255,.07) 12px);color:var(--muted);cursor:default}
+.cell small{display:block;font-weight:600;opacity:.8}
+.search{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--ink);font-size:13px;min-width:200px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.empty{color:var(--muted);padding:18px;text-align:center}
+.loading{color:var(--muted);padding:40px;text-align:center}
+.err{color:var(--bad)}
+.toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.miss li{margin:4px 0;font-size:13px}
+.miss ul{margin:0;padding-left:18px}
+.late{color:var(--bad);font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1 id="title">Property Certificates</h1>
+      <p class="sub">Heart &amp; Home Living &mdash; certificate dates for this home</p>
+      <div class="stamp" id="stamp"></div>
+    </div>
+    <div class="btns">
+      <a class="btn" id="addbtn" target="_blank">+ Add / renew a certificate</a>
+      <button class="btn ghost" id="refresh">&#8635; Refresh</button>
+    </div>
+  </div>
+  <div class="chips" id="homechips"></div>
+  <div id="content"><div class="loading">Loading live from ClickUp&hellip;</div></div>
+</div>
+<script>
+var DATA_URL = "https://ruthbloch.app.n8n.cloud/webhook/cert-data"; var FALLBACK_URL = "data.json";
+var HOME = (new URLSearchParams(location.search).get("home") || "").trim();
+HOME = HOME ? HOME.charAt(0).toUpperCase() + HOME.slice(1).toLowerCase() : "";
+var ADD_URL = "form.html";
+document.getElementById('addbtn').href = ADD_URL;
+var TYPES = ['Fire Risk Assessment','Gas Safety','Electrical (EICR)','Fire Alarm','Emergency Lighting','Fire Extinguishers','PAT','Legionella / Water','Health & Safety','EPC'];
+var SHORT = {'Fire Risk Assessment':'FRA','Gas Safety':'Gas','Electrical (EICR)':'EICR','Fire Alarm':'Fire alarm','Emergency Lighting':'Em. lighting','Fire Extinguishers':'Extinguishers','PAT':'PAT','Legionella / Water':'Legionella','Health & Safety':'H&amp;S','EPC':'EPC'};
+var BUCKET_LABEL = {overdue:'Expired', d30:'Due within 30 days', d60:'Due in 31-60 days', ok:'In date', unknown:'No due date'};
+var S = {home:HOME || 'All', bucket:'all', month:null, q:''};
+var LIVE = true;
+var D = null, chart = null;
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function dfmt(ms){ if(!ms) return '&mdash;'; return new Date(Number(ms)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function bucket(c){ if(!c.expiry) return 'unknown'; if(c.daysLeft < 0) return 'overdue'; if(c.daysLeft <= 30) return 'd30'; if(c.daysLeft <= 60) return 'd60'; return 'ok'; }
+function inHome(x){ return S.home==='All' || x.home===S.home; }
+function current(){
+  var best = {};
+  D.certificates.forEach(function(c){ var k = c.home+'|'+c.type; if(!best[k] || (c.expiry||0) > (best[k].expiry||0)) best[k] = c; });
+  return Object.keys(best).map(function(k){ var c = best[k]; c.bucket = bucket(c); return c; });
+}
+function missingFor(home){ var have = {}; current().forEach(function(c){ if(c.home===home) have[c.type]=1; }); return TYPES.filter(function(t){ return !have[t]; }); }
+function monthKey(ms){ var d = new Date(Number(ms)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function monthLabel(k){ var p = k.split('-'); return new Date(+p[0], +p[1]-1, 1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'}); }
+function kpi(n,l,cls,v){ return '<div class="kpi '+cls+(S.bucket===v?' sel':'')+'" data-a="bucket" data-v="'+v+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+function chip(a,v,label,sel){ return '<span class="chip'+(sel?' sel':'')+'" data-a="'+a+'" data-v="'+v+'">'+label+'</span>'; }
+
+function render(){
+  var hc = chip('home','All','All homes',S.home==='All');
+  D.homes.forEach(function(h){ hc += chip('home',h,h,S.home===h); });
+  document.getElementById('homechips').innerHTML = '';
+  var cur = current().filter(inHome);
+  var cnt = function(b){ return cur.filter(function(c){ return c.bucket===b; }).length; };
+  var homesForMissing = S.home==='All' ? D.homes : [S.home];
+  var missCount = homesForMissing.reduce(function(a,h){ return a + missingFor(h).length; }, 0);
+
+  var homesHtml = D.homes.map(function(h){
+    var c = current().filter(function(x){ return x.home===h; });
+    var b = function(k){ return c.filter(function(x){ return x.bucket===k; }).length; };
+    var m = missingFor(h).length;
+    var r = b('overdue') ? 'red' : ((b('d30') || b('d60') || m) ? 'amber' : 'green');
+    var next = c.filter(function(x){ return x.expiry && x.daysLeft >= 0; }).sort(function(a,z){ return a.expiry - z.expiry; })[0];
+    return '<div class="home'+(S.home===h?' sel':'')+'" data-a="home" data-v="'+h+'">' +
+      '<div class="nm"><span class="dot '+r+'"></span>'+h+'</div><div class="rows">' +
+      'In date <b>'+b('ok')+'</b> &middot; due &le;60d <b>'+(b('d30')+b('d60'))+'</b><br>' +
+      'Expired <b>'+b('overdue')+'</b> &middot; missing <b>'+m+'</b> &middot; no date <b>'+b('unknown')+'</b></div>' +
+      (next ? '<div class="next">Next due: <b style="color:var(--ink)">'+esc(next.type)+'</b> &middot; '+dfmt(next.expiry)+'</div>' : '') + '</div>';
+  }).join('');
+
+  document.getElementById('content').innerHTML =
+    '<div class="section-label">At a glance &middot; click a tile to filter the list</div>' +
+    '<div class="kpis">' +
+      kpi(cnt('overdue'),'Expired',cnt('overdue')?'red':'green','overdue') +
+      kpi(cnt('d30'),'Due within 30 days',cnt('d30')?'red':'green','d30') +
+      kpi(cnt('d60'),'Due in 31&ndash;60 days',cnt('d60')?'amber':'green','d60') +
+      kpi(cnt('ok'),'In date','green','ok') +
+      kpi(missCount,'Missing from system',missCount?'amber':'green','missing') +
+      kpi(cnt('unknown'),'No due date set',cnt('unknown')?'amber':'green','unknown') +
+    '</div>' +
+    '<div class="section-label">Certificate status</div>' +
+    '<div class="card"><h2>Every certificate &mdash; click a box to open it in ClickUp</h2><div class="matrix" id="matrix"></div>' +
+      '<div class="legend"><span><i class="sw" style="background:rgba(52,211,153,.5)"></i>In date</span><span><i class="sw" style="background:rgba(251,191,36,.6)"></i>Due in 31&ndash;60 days</span><span><i class="sw" style="background:rgba(251,146,60,.7)"></i>Due within 30 days</span><span><i class="sw" style="background:rgba(248,113,113,.7)"></i>Expired</span><span><i class="sw" style="background:rgba(255,255,255,.15)"></i>No due date / not on system</span></div></div>' +
+    '<div class="grid">' +
+      '<div class="card"><h2>Renewals due &mdash; next 12 months &middot; click a month</h2><div class="chartbox"><canvas id="c_month"></canvas></div></div>' +
+      '<div class="card" id="misscard"><h2>Missing from the system</h2><div id="missbox"></div></div>' +
+    '</div>' +
+    '<div class="card" id="listcard"><h2><span>Certificate list &mdash; click a row to open it</span><input class="search" id="q" placeholder="Search certificates&hellip;" value="'+esc(S.q)+'"></h2>' +
+      '<div class="toolbar" style="margin-bottom:10px">' + chip('bucket','all','All',S.bucket==='all') + chip('bucket','overdue','Expired',S.bucket==='overdue') + chip('bucket','d30','Due &le;30 days',S.bucket==='d30') + chip('bucket','d60','Due 31&ndash;60 days',S.bucket==='d60') + chip('bucket','ok','In date',S.bucket==='ok') + chip('bucket','unknown','No due date',S.bucket==='unknown') +
+      (S.month ? chip('month','clear','Month: '+monthLabel(S.month)+' &times;',true) : '') + '</div>' +
+      '<div id="listbox"></div></div>';
+
+  buildMatrix(); buildMissing(); buildList(); buildChart();
+  document.getElementById('q').addEventListener('input', function(e){ S.q = e.target.value; buildList(); });
+  document.getElementById('stamp').textContent = (LIVE ? 'Live from ClickUp · loaded ' : 'Could not reach ClickUp, showing the last snapshot from ') + new Date(D.snapshot || D.generated).toLocaleString('en-GB', {dateStyle:'medium', timeStyle:'short'});
+}
+
+function buildMatrix(){
+  var homes = S.home==='All' ? D.homes : [S.home];
+  var cur = current();
+  var h = '<table><thead><tr><th>Home</th>' + TYPES.map(function(t){ return '<th style="text-align:center">'+SHORT[t]+'</th>'; }).join('') + '</tr></thead><tbody>';
+  homes.forEach(function(home){
+    h += '<tr><td><b>'+home+'</b></td>';
+    TYPES.forEach(function(t){
+      var c = cur.filter(function(x){ return x.home===home && x.type===t; })[0];
+      if(!c){ h += '<td class="cell missing" title="No '+esc(t)+' on the system for '+home+'">missing</td>'; return; }
+      var label = c.expiry ? (c.daysLeft < 0 ? Math.abs(c.daysLeft)+'d over' : c.daysLeft+'d') : 'no date';
+      h += '<td class="cell '+c.bucket+'" data-a="open" data-v="'+esc(c.url)+'" title="'+esc(c.name)+'">'+label+'<small>'+(c.expiry?dfmt(c.expiry):'&nbsp;')+'</small></td>';
+    });
+    h += '</tr>';
+  });
+  document.getElementById('matrix').innerHTML = h + '</tbody></table>';
+}
+
+function buildMissing(){
+  var homes = S.home==='All' ? D.homes : [S.home];
+  var rows = homes.map(function(h){ var m = missingFor(h); return m.length ? '<li><b>'+h+'</b>: '+m.map(esc).join(', ')+'</li>' : ''; }).join('');
+  document.getElementById('missbox').innerHTML = rows ? '<div class="miss"><ul>'+rows+'</ul></div><div class="legend">Use &ldquo;+ Add / renew a certificate&rdquo; to add these.</div>' : '<div class="empty">Every certificate type is on the system.</div>';
+}
+
+function buildList(){
+  var q = S.q.toLowerCase();
+  var list = current().filter(function(c){
+    return inHome(c) && (S.bucket==='all' || S.bucket==='missing' || c.bucket===S.bucket) && (!S.month || (c.expiry && monthKey(c.expiry)===S.month)) &&
+      (!q || (c.home+' '+c.type+' '+c.name).toLowerCase().indexOf(q) >= 0);
+  }).sort(function(a,b){ return (a.expiry||9e15) - (b.expiry||9e15); });
+  if(S.bucket==='missing'){ document.getElementById('misscard').scrollIntoView({behavior:'smooth'}); }
+  if(!list.length){ document.getElementById('listbox').innerHTML = '<div class="empty">No certificates match these filters.</div>'; return; }
+  var h = '<table><thead><tr><th>Home</th><th>Certificate</th><th>Last inspection</th><th>Next due</th><th>Days left</th><th>Status</th></tr></thead><tbody>';
+  list.forEach(function(c){
+    h += '<tr class="link" data-a="open" data-v="'+esc(c.url)+'">' +
+      '<td><b>'+esc(c.home)+'</b></td><td>'+esc(c.type)+'<br><span style="color:var(--muted);font-size:12px">'+esc(c.name)+'</span></td>' +
+      '<td>'+dfmt(c.issue)+'</td><td>'+dfmt(c.expiry)+'</td>' +
+      '<td class="'+(c.bucket==='overdue'?'late':'')+'">'+(c.expiry ? (c.daysLeft < 0 ? Math.abs(c.daysLeft)+' days over' : c.daysLeft) : '&mdash;')+'</td>' +
+      '<td><span class="pill '+c.bucket+'">'+BUCKET_LABEL[c.bucket]+'</span></td></tr>';
+  });
+  document.getElementById('listbox').innerHTML = h + '</tbody></table><div class="legend">'+list.length+' certificate'+(list.length===1?'':'s')+' shown</div>';
+}
+
+function buildChart(){
+  if(chart){ chart.destroy(); chart = null; }
+  var keys = [], now = new Date();
+  for(var i=0;i<12;i++){ var d = new Date(now.getFullYear(), now.getMonth()+i, 1); keys.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); }
+  var homes = S.home==='All' ? D.homes : [S.home];
+  var cols = ['#4f8cff','#34d399','#fbbf24','#f472b6','#a78bfa'];
+  var cur = current().filter(function(c){ return c.expiry && c.daysLeft >= 0; });
+  var ds = homes.map(function(h,i){ return { label:h, data: keys.map(function(k){ return cur.filter(function(c){ return c.home===h && monthKey(c.expiry)===k; }).length; }), backgroundColor: cols[D.homes.indexOf(h) % cols.length], borderRadius:4, stack:'s' }; });
+  chart = new Chart(document.getElementById('c_month'), { type:'bar', data:{ labels: keys.map(monthLabel), datasets: ds },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#cdd9ef' } } },
+      scales:{ x:{ stacked:true, ticks:{ color:'#cdd9ef' }, grid:{ display:false } }, y:{ stacked:true, beginAtZero:true, ticks:{ color:'#9fb1d0', precision:0 }, grid:{ color:'rgba(255,255,255,.06)' } } },
+      onClick:function(e,els){ if(!els.length) return; S.month = keys[els[0].index]; S.bucket = 'all'; render(); document.getElementById('listcard').scrollIntoView({behavior:'smooth'}); } } });
+}
+
+document.addEventListener('click', function(e){
+  var el = e.target.closest('[data-a]'); if(!el) return;
+  var a = el.getAttribute('data-a'), v = el.getAttribute('data-v');
+  if(a==='open'){ if(v) window.open(v,'_blank'); return; }
+  var scroll = false;
+  if(a==='bucket'){ S.bucket = (S.bucket===v && v!=='all') ? 'all' : v; scroll = (el.className.indexOf('kpi') >= 0); }
+  else if(a==='month') S.month = null;
+  render();
+  if(scroll) document.getElementById(S.bucket==='missing' ? 'misscard' : 'listcard').scrollIntoView({behavior:'smooth'});
+});
+
+function show(d){
+  D = d;
+  if(!HOME || D.homes.indexOf(HOME) < 0){
+    document.getElementById('content').innerHTML = '<div class="loading err">This link is missing the home name. Ask Head Office for the right link.</div>';
+    return;
+  }
+  document.getElementById('title').textContent = HOME + ' House - Property Certificates';
+  document.title = HOME + ' Certificates';
+  render();
+}
+function load(){
+  fetch(DATA_URL + '?t=' + Date.now()).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){ LIVE = true; show(d); })
+    .catch(function(){
+      fetch(FALLBACK_URL + '?t=' + Date.now()).then(function(r){ return r.json(); })
+        .then(function(d){ LIVE = false; show(d); })
+        .catch(function(){ document.getElementById('content').innerHTML = '<div class="loading err">Could not load the data. Press Refresh to try again.</div>'; });
+    });
+}
+var rbtn = document.getElementById('refresh');
+rbtn.addEventListener('click', function(){ load(); });
+load();
+</script>
+</body>
+</html>
