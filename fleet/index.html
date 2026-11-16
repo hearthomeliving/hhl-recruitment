@@ -59,6 +59,9 @@
   .tl { width: 13px; height: 13px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(16,24,40,.25); }
   .home-head h2 { font-size: 15.5px; font-weight: 700; }
   .home-head .sub { font-size: 12px; color: var(--muted); }
+  .reglbl { background: rgba(16,24,40,.85); color: #fff; border: none; border-radius: 5px; font-size: 11px; font-weight: 700; padding: 1px 6px; box-shadow: none; }
+  .reglbl::before { display: none; }
+  .showall { background: #fff; border: 2px solid rgba(0,0,0,.2); border-radius: 4px; padding: 5px 9px; font: 600 12px -apple-system, 'Segoe UI', Roboto, sans-serif; cursor: pointer; }
   #loadmsg { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
   #loadmsg.error { color: var(--red); }
 </style>
@@ -70,7 +73,7 @@
   <div class="header-stats">
     <span>Vehicles: <b id="stat-total">–</b></span>
     <span>Moving: <b id="stat-moving">–</b></span>
-    <span>Stale GPS: <b id="stat-stale">–</b></span>
+    <span>No signal 6h+: <b id="stat-stale">–</b></span>
     <span>Away from base: <b id="stat-away">–</b></span>
     <span>Compliance alerts: <b id="stat-comp">–</b></span>
     <span>Refreshed: <b id="stat-time">–</b></span>
@@ -79,7 +82,7 @@
 <div id="map"></div>
 <div id="loadmsg">Loading live fleet data…</div>
 <div id="cards"></div>
-<footer>Data: TrackIt247 + DVSA + compliance registry · Auto-refreshes every 5 minutes · Positions older than 3h flagged stale</footer>
+<footer>Data: TrackIt247 + DVSA + compliance registry · Auto-refreshes every 2 minutes · Parked cars check in every few hours · Flagged if no signal for 6h</footer>
 <script>
 const DATA_URL = 'https://ruthbloch.app.n8n.cloud/webhook/fleet-data';
 
@@ -95,6 +98,29 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 let markerLayer = L.layerGroup().addTo(map);
+let lastBounds = [];
+let userMoved = false;
+let fitting = false;
+function fitAll() {
+  const el = document.getElementById('map');
+  if (!lastBounds.length || el.clientWidth < 50 || el.clientHeight < 50) return;
+  fitting = true;
+  map.invalidateSize();
+  map.fitBounds(lastBounds, { padding: [40, 40], maxZoom: 12, animate: false });
+  setTimeout(() => { fitting = false; }, 300);
+}
+map.on('dragstart', () => { userMoved = true; });
+map.on('zoomstart', () => { if (!fitting) userMoved = true; });
+if (window.ResizeObserver) new ResizeObserver(() => { map.invalidateSize(); if (!userMoved) fitAll(); }).observe(document.getElementById('map'));
+window.addEventListener('resize', () => { map.invalidateSize(); if (!userMoved) fitAll(); });
+const ShowAll = L.Control.extend({ options: { position: 'topright' }, onAdd: function () {
+  const b = L.DomUtil.create('button', 'showall');
+  b.textContent = 'Show all cars';
+  L.DomEvent.disableClickPropagation(b);
+  b.onclick = () => { userMoved = false; map.closePopup(); fitAll(); };
+  return b;
+} });
+map.addControl(new ShowAll());
 
 function render(payload) {
   if (HOME_FILTER) {
@@ -124,10 +150,10 @@ function render(payload) {
   }
 
   function classify(v) {
-    const pos = new Date((v.PositionTime || '').replace(' ', 'T'));
+    const pos = new Date((v.LastCommTime || v.PositionTime || '').replace(' ', 'T'));
     const ageH = (now - pos) / 36e5;
     if (isNaN(ageH) || ageH > 24) return 'verystale';
-    if (ageH > 3) return 'stale';
+    if (ageH > 6) return 'stale';
     return (v.SpeedKPH || 0) > 3 ? 'moving' : 'parked';
   }
   function ago(ts) {
@@ -190,7 +216,7 @@ function render(payload) {
     return h;
   }
 
-  const labels = { moving: 'MOVING', parked: 'PARKED', stale: 'STALE GPS', verystale: 'VERY STALE' };
+  const labels = { moving: 'MOVING', parked: 'PARKED', stale: 'NO SIGNAL 6H+', verystale: 'VERY STALE' };
   const colors = { moving: '#16a34a', parked: '#2563eb', stale: '#d97706', verystale: '#dc2626' };
 
   markerLayer.clearLayers();
@@ -204,14 +230,16 @@ function render(payload) {
     }).addTo(markerLayer);
     let pop = '<b>' + (v.compliance ? formatReg(v.compliance.reg) : v.Registration) + '</b>' + (carDesc(v.compliance) ? '<br>' + carDesc(v.compliance) : '') + '<br>' + labels[cls] +
       ' · ' + (v.SpeedKPH || 0) + ' km/h<br>Battery: ' + (v.BatteryLevel || '?') +
-      '<br>Position: ' + ago(v.PositionTime);
+      '<br>Last update: ' + ago(v.LastCommTime || v.PositionTime);
     if (v.compliance && v.compliance.motExpiry) pop += '<br>MOT: ' + isoDay(v.compliance.motExpiry);
     pop += '<br><small>' + (v.Address || '').replaceAll('- ', ', ') + '</small>';
     mk.bindPopup(pop);
+    mk.bindTooltip(v.compliance ? formatReg(v.compliance.reg) : v.Registration, { permanent: true, direction: 'right', offset: [10, 0], className: 'reglbl' });
     markers[v.Registration] = mk;
     bounds.push([v.Lat, v.Lon]);
   });
-  if (bounds.length) map.fitBounds(bounds, { padding: [35, 35] });
+  lastBounds = bounds;
+  if (!userMoved) fitAll();
 
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '';
@@ -256,13 +284,13 @@ function render(payload) {
       '<span class="pill ' + cc + '">' + compLabel + '</span>' +
       (battWarn(v) ? '<span class="pill comp-bad">⚠ BATTERY LOW ' + (v.BatteryLevel || '') + '</span>' : '') + '</div>' +
       (desc ? '<div class="row"><span class="label">Vehicle</span><span>' + desc + '</span></div>' : '') +
-      '<div class="row"><span class="label">GPS position</span><span>' + ago(v.PositionTime) + '</span></div>' +
+      '<div class="row"><span class="label">Last update</span><span>' + ago(v.LastCommTime || v.PositionTime) + '</span></div>' +
       (v.homeStatus === 'AWAY' && v.homeDistanceMiles !== null ? '<div class="row"><span class="label">Distance from base</span><span class="due-warn">' + v.homeDistanceMiles + ' mi</span></div>' : '') +
       compHtml(v.compliance) +
       '<div class="addr">' + (v.Address || 'No address').replaceAll('- ', ', ') + '</div>';
     card.onclick = () => {
       const mk = markers[v.Registration];
-      if (mk) { map.setView(mk.getLatLng(), 15); mk.openPopup(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (mk) { userMoved = true; map.setView(mk.getLatLng(), 15); mk.openPopup(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     };
     return card;
   }
@@ -322,7 +350,7 @@ async function load() {
 }
 
 load();
-setInterval(load, 300000);
+setInterval(load, 120000);
 </script>
 </body>
 </html>
